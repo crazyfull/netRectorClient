@@ -1,0 +1,3 @@
+add_executable(netRectorClientTests test_all.cpp)
+target_link_libraries(netRectorClientTests PRIVATE netRectorClient)
+add_test(NAME netRectorClientTests COMMAND netRectorClientTests ${CMAKE_CURRENT_SOURCE_DIR})
