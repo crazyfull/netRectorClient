@@ -25,7 +25,7 @@ Yamux frames exchanged.
 
 ```
 GET / HTTP/1.1                                 HTTP/1.1 101 Switching Protocols
-Host: sv1.mojz.ir                              upgrade: websocket
+Host: sv1.server.ir                              upgrade: websocket
 Upgrade: websocket                  <--->      Sec-WebSocket-Accept: dGhlIHNhbXBsZSBub25jzQ=
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jzQ==
 Sec-WebSocket-Version: 13
@@ -58,7 +58,7 @@ overridden at run time:
 | option | default | meaning |
 |---|---|---|
 | `--listen IP:PORT` | `0.0.0.0:1080` | local SOCKS5 listener |
-| `--cdn IP:PORT` | `irc.x81.ir:8080` | where the tunnels connect (CDN edge or the server) |
+| `--cdn IP:PORT` | `irc.cdn.ir:8080` | where the tunnels connect (CDN edge or the server) |
 | `--host NAME` | `mojz.ir` | `Host` header of the upgrade request |
 | `--path PATH` | `/` | request path |
 | `--ws-key KEY` | `dGhlIHNhbXBsZSBub25jzQ==` | `Sec-WebSocket-Key` (must match the server) |
