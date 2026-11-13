@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mux Tunnel</string>
+
+    <string name="button_start">Start</string>
+    <string name="button_stop">Stop</string>
+    <string name="button_battery">Allow running in background (battery)</string>
+    <string name="action_stop">Stop</string>
+
+    <string name="status_stopped">Stopped</string>
+    <string name="status_starting">Starting…</string>
+    <string name="status_running">Running: all traffic goes through the tunnel</string>
+    <string name="status_error">Stopped: %1$s</string>
+
+    <string name="section_server">CDN / server</string>
+    <string name="section_handshake">Handshake (advanced)</string>
+    <string name="hint_address">Address (IP or domain)</string>
+    <string name="hint_port">Port</string>
+    <string name="hint_tunnels">Number of tunnels (1-16)</string>
+    <string name="hint_handshake_host">Handshake Host header</string>
+    <string name="hint_handshake_path">Handshake path (starts with /)</string>
+    <string name="hint_ws_key">Sec-WebSocket-Key</string>
+    <string name="hint_ws_accept">Expected Sec-WebSocket-Accept (empty = do not check)</string>
+    <string name="note_tcp_only">Only TCP traffic (and DNS) is tunneled. Other UDP traffic is not supported.</string>
+
+    <string name="error_address">Enter an IP address or a domain</string>
+    <string name="error_port">Port must be 1-65535</string>
+    <string name="error_tunnels">Tunnels must be %1$d-%2$d</string>
+    <string name="error_path">The path must start with /</string>
+    <string name="error_settings">invalid settings</string>
+    <string name="error_vpn_permission">VPN permission was not granted</string>
+    <string name="error_engine">the tun2socks engine could not start</string>
+    <string name="error_core">the tunnel client stopped unexpectedly</string>
+
+    <string name="notification_channel">Tunnel status</string>
+    <string name="notification_starting">Starting…</string>
+    <string name="notification_running">Connected via %1$s:%2$d</string>
+</resources>

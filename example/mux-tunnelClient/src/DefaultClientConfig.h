@@ -36,9 +36,12 @@ constexpr uint32_t HandshakeTimeoutSeconds = 10;
 constexpr uint32_t LocalGreetingTimeoutSeconds = 30;
 // Maximum number of concurrent streams (SOCKS5 connections) per tunnel. Keep it <= the server's.
 constexpr size_t MaxStreamsPerTunnel = 32768;
-// How often the main loop wakes up to run the reconnect logic (ms). There are no timers in
-// netRectorClient, so the application drives the event loop itself.
-constexpr int LoopSliceMs = 100;
+// Longest time the main loop sleeps between two passes (ms). There are no timers in
+// netRectorClient, so the application drives the event loop itself: it sleeps until the next
+// tunnel reconnect is due, but never longer than this (also the latency of a stop request).
+constexpr int MaxLoopSliceMs = 1000;
+// Shortest sleep, to avoid a busy loop when a deadline has just passed.
+constexpr int MinLoopSliceMs = 10;
 
 // Delay before a lost tunnel is re-established; doubles on every failure up to the maximum.
 constexpr int ReconnectInitialDelayMs = 500;

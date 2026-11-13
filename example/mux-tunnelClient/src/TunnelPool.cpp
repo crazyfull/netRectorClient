@@ -30,6 +30,16 @@ void TunnelPool::stop()
     m_stopped = true;
 }
 
+uint64_t TunnelPool::nextDeadlineMs() const
+{
+    uint64_t earliest = 0;
+    for (const TunnelSlot& slot : m_slots) {
+        if (slot.reconnectScheduled && (earliest == 0 || slot.reconnectAtMs < earliest))
+            earliest = slot.reconnectAtMs;
+    }
+    return earliest;
+}
+
 void TunnelPool::tick(uint64_t nowMs)
 {
     m_nowMs = nowMs;

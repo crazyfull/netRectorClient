@@ -33,6 +33,9 @@ public:
     // (netRectorClient has no timers, so the pool keeps its own deadlines).
     void tick(uint64_t nowMs);
 
+    // Loop thread: loop-clock time of the earliest pending reconnect, 0 when none is scheduled.
+    uint64_t nextDeadlineMs() const;
+
     // Reactor thread: opens a stream on the next ready tunnel (round-robin). Returns the stream id
     // and the tunnel it belongs to, or 0 when no tunnel can take a new stream.
     uint32_t openStream(netrector::MultiplexedTunnel::OnStreamDataFn dataFunction,

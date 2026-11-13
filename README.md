@@ -48,10 +48,14 @@ std::atomic<bool> stop{false};
 loop.run(stop);
 ```
 
-## Example
+## Examples
 
 [`example/mux-tunnelClient`](example/mux-tunnelClient) — the netRector mux-tunnelClient (SOCKS5 over
 mux tunnels) ported to this library.
+
+[`example/android-mux-tunnel`](example/android-mux-tunnel) — Android app (5.0+) that runs the tunnel as
+a system VPN (foreground service, works with the screen off), with a manual GitHub Actions build
+for all ABIs. Clone with `--recurse-submodules` (it uses hev-socks5-tunnel).
 
 ## Status
 
