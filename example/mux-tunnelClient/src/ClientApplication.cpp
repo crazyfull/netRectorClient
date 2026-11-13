@@ -84,11 +84,13 @@ int ClientApplication::run(bool handleSignals)
         loop.runOnce(sliceMs);
         loop.updateCashedTime();
         pool->tick(loop.getCachedNowMs());
+        m_connectedTunnels = static_cast<int>(pool->connectedCount());
     }
 
     NR_LOG(LOG_INFO, "[client] shutting down");
 
     pool->stop();       // no reconnects while the sockets are closed
+    m_connectedTunnels = 0;
     listener.stop();
     {
         std::lock_guard<std::mutex> lock(m_loopMutex);

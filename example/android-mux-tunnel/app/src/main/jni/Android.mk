@@ -3,7 +3,7 @@
 #   libmuxtunnel.so          netRectorClient + mux-tunnelClient core + JNI bridge
 MY_PATH := $(call my-dir)
 REPO_ROOT := $(abspath $(MY_PATH)/../../../../../..)
-HEV_DIR := $(REPO_ROOT)/example/android-mux-tunnel/third_party/hev-socks5-tunnel
+HEV_DIR := $(REPO_ROOT)/third_party/hev-socks5-tunnel
 
 ifeq ($(wildcard $(HEV_DIR)/Android.mk),)
 $(error hev-socks5-tunnel is missing: run "git submodule update --init --recursive")

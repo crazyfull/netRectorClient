@@ -1,0 +1,64 @@
+name: MuxTunnel
+options:
+  bundleIdPrefix: io.github.crazyfull
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+
+targets:
+  MuxTunnel:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.crazyfull.muxtunnel
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Mux Tunnel
+        CFBundleLocalizations: [en, fa]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+    entitlements:
+      path: App/MuxTunnel.entitlements
+      properties:
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
+    dependencies:
+      - target: MuxTunnelExtension
+        embed: true
+
+  MuxTunnelExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extension
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.crazyfull.muxtunnel.tunnel
+        OTHER_LDFLAGS: [-lc++]
+    info:
+      path: Extension/Info.plist
+      properties:
+        CFBundleDisplayName: Mux Tunnel Extension
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
+    entitlements:
+      path: Extension/MuxTunnelExtension.entitlements
+      properties:
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
+    dependencies:
+      - framework: Native/MuxTunnelCore.xcframework
+        embed: false

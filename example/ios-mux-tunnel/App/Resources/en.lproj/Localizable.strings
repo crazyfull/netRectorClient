@@ -1,0 +1,25 @@
+"button.start" = "Start";
+"button.stop" = "Stop";
+
+"status.stopped" = "Stopped";
+"status.starting" = "Starting…";
+"status.connected" = "Connected";
+"status.noTunnel" = "No tunnel connected";
+"status.failed" = "Failed";
+"statusBar.tunnels" = "Tunnels %d / %d";
+
+"section.server" = "CDN / server";
+"section.handshake" = "Handshake (advanced)";
+"field.address" = "Address (IP or domain)";
+"field.port" = "Port";
+"field.tunnels" = "Number of tunnels: %d";
+"field.handshakeHost" = "Handshake Host header";
+"field.handshakePath" = "Handshake path (starts with /)";
+"field.webSocketKey" = "Sec-WebSocket-Key";
+"field.expectedAccept" = "Expected Sec-WebSocket-Accept (empty = do not check)";
+"note.tcpOnly" = "Only TCP traffic (and DNS) is tunneled. Other UDP traffic is not supported.";
+
+"error.address" = "Enter an IP address or a domain";
+"error.port" = "Port must be 1-65535";
+"error.tunnels" = "Tunnels must be %d-%d";
+"error.path" = "The path must start with /";

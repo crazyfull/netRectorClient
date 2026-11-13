@@ -1,0 +1,9 @@
+module MuxTunnelCore {
+    header "MuxTunnelCore.h"
+    export *
+}
+
+module HevSocks5Tunnel {
+    header "hev-main.h"
+    export *
+}

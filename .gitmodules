@@ -1,3 +1,3 @@
-[submodule "example/android-mux-tunnel/third_party/hev-socks5-tunnel"]
-	path = example/android-mux-tunnel/third_party/hev-socks5-tunnel
+[submodule "third_party/hev-socks5-tunnel"]
+	path = third_party/hev-socks5-tunnel
 	url = https://github.com/heiher/hev-socks5-tunnel

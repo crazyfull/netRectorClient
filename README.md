@@ -57,6 +57,9 @@ mux tunnels) ported to this library.
 a system VPN (foreground service, works with the screen off), with a manual GitHub Actions build
 for all ABIs. Clone with `--recurse-submodules` (it uses hev-socks5-tunnel).
 
+[`example/ios-mux-tunnel`](example/ios-mux-tunnel) — the same for iOS (SwiftUI + Packet Tunnel extension),
+with a status bar that shows how many tunnels are connected; manual GitHub Actions build (unsigned IPA).
+
 ## Status
 
 Validated on Linux (functional tests, ASan/UBSan, interop with netRector's mux-tunnelServer).

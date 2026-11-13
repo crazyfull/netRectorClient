@@ -33,6 +33,9 @@ public:
     // (netRectorClient has no timers, so the pool keeps its own deadlines).
     void tick(uint64_t nowMs);
 
+    // Loop thread: number of tunnels that finished the handshake and are connected right now.
+    size_t connectedCount() const;
+
     // Loop thread: loop-clock time of the earliest pending reconnect, 0 when none is scheduled.
     uint64_t nextDeadlineMs() const;
 

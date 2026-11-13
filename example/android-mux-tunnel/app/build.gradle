@@ -56,7 +56,7 @@ android {
     sourceSets {
         main {
             // hev.htproxy.TProxyService: the JNI binding shipped with hev-socks5-tunnel
-            java.srcDirs += ['../third_party/hev-socks5-tunnel/android']
+            java.srcDirs += ['../../../third_party/hev-socks5-tunnel/android']
         }
     }
 

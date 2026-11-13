@@ -1,0 +1,25 @@
+"button.start" = "شروع";
+"button.stop" = "توقف";
+
+"status.stopped" = "متوقف است";
+"status.starting" = "در حال شروع…";
+"status.connected" = "متصل";
+"status.noTunnel" = "هیچ تونلی متصل نیست";
+"status.failed" = "ناموفق";
+"statusBar.tunnels" = "تونل‌ها %d / %d";
+
+"section.server" = "سرور CDN";
+"section.handshake" = "هندشیک (پیشرفته)";
+"field.address" = "آدرس (IP یا دامنه)";
+"field.port" = "پورت";
+"field.tunnels" = "تعداد تونل: %d";
+"field.handshakeHost" = "هدر Host هندشیک";
+"field.handshakePath" = "مسیر هندشیک (با / شروع شود)";
+"field.webSocketKey" = "Sec-WebSocket-Key";
+"field.expectedAccept" = "Sec-WebSocket-Accept مورد انتظار (خالی = بررسی نشود)";
+"note.tcpOnly" = "فقط ترافیک TCP (و DNS) از تونل عبور می‌کند. سایر ترافیک UDP پشتیبانی نمی‌شود.";
+
+"error.address" = "یک آدرس IP یا دامنه وارد کنید";
+"error.port" = "پورت باید بین ۱ تا ۶۵۵۳۵ باشد";
+"error.tunnels" = "تعداد تونل باید بین %d تا %d باشد";
+"error.path" = "مسیر باید با / شروع شود";

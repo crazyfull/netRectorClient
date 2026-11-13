@@ -10,8 +10,8 @@ netRector itself is licensed under LGPL-2.1-or-later (see `LICENCE`). It include
 
 The Yamux wire protocol implemented in `src/clsMultiplexedTunnel.*` follows the public specification at https://github.com/hashicorp/yamux/blob/master/spec.md; the repository contains no hashicorp/yamux source files (only a comment and the spec link refer to it).
 
-## Android example (`example/android-mux-tunnel`)
+## Android and iOS examples (`example/android-mux-tunnel`, `example/ios-mux-tunnel`)
 
 | Component | Where | License |
 |---|---|---|
-| hev-socks5-tunnel (heiher) | git submodule `example/android-mux-tunnel/third_party/hev-socks5-tunnel`, built into the app as `libhev-socks5-tunnel.so` | MIT. Its own submodules `hev-task-system` and `yaml` are MIT too; `lwip` is BSD-3-Clause. License files are in the submodule trees. |
+| hev-socks5-tunnel (heiher) | git submodule `third_party/hev-socks5-tunnel`, built into the apps (`libhev-socks5-tunnel.so` on Android, a static library on iOS) | MIT. Its own submodules `hev-task-system` and `yaml` are MIT too; `lwip` is BSD-3-Clause. License files are in the submodule trees. |

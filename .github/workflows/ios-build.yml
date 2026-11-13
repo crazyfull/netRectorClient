@@ -1,0 +1,75 @@
+name: iOS IPA (unsigned)
+
+# Manual build of the iOS app (example/ios-mux-tunnel). The IPA is NOT signed: a VPN (Network
+# Extension) app needs your own Apple Developer provisioning profiles, so sign it afterwards with
+# your own tool (Xcode, fastlane, Sideloadly, ...) using profiles that include the
+# "Network Extensions" capability for both bundle ids:
+#   io.github.crazyfull.muxtunnel and io.github.crazyfull.muxtunnel.tunnel
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Also attach the IPA to a GitHub release"
+        type: boolean
+        default: false
+      release_tag:
+        description: "Release tag (only used when publishing)"
+        type: string
+        default: "ios-latest"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: example/ios-mux-tunnel
+    steps:
+      - name: Checkout (with the hev-socks5-tunnel submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build the native core (xcframework)
+        run: ./scripts/buildNativeCore.sh
+
+      - name: Generate the Xcode project
+        run: xcodegen generate
+
+      - name: Build the app
+        run: |
+          xcodebuild \
+            -project MuxTunnel.xcodeproj \
+            -scheme MuxTunnel \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/derived \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package the unsigned IPA
+        run: |
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R build/derived/Build/Products/Release-iphoneos/MuxTunnel.app build/ipa/Payload/
+          (cd build/ipa && zip -qry "$GITHUB_WORKSPACE/MuxTunnel-unsigned.ipa" Payload)
+          ls -l "$GITHUB_WORKSPACE/MuxTunnel-unsigned.ipa"
+
+      - name: Upload the IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: mux-tunnel-ios-unsigned-ipa
+          path: MuxTunnel-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Publish a release
+        if: ${{ inputs.publish_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: Mux Tunnel (iOS, unsigned) ${{ inputs.release_tag }}
+          files: MuxTunnel-unsigned.ipa

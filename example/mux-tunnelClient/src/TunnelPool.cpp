@@ -30,6 +30,16 @@ void TunnelPool::stop()
     m_stopped = true;
 }
 
+size_t TunnelPool::connectedCount() const
+{
+    size_t count = 0;
+    for (const TunnelSlot& slot : m_slots) {
+        if (slot.tunnel && slot.ready)
+            count++;
+    }
+    return count;
+}
+
 uint64_t TunnelPool::nextDeadlineMs() const
 {
     uint64_t earliest = 0;
