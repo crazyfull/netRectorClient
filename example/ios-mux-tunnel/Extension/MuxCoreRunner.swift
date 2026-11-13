@@ -63,7 +63,12 @@ final class MuxCoreRunner {
             configuration.handshakePath,
             configuration.webSocketKey,
             configuration.expectedAccept
-        ].map { strdup($0)! }
+        ].map { (text: String) -> UnsafeMutablePointer<CChar> in
+            guard let copy = strdup(text) else {
+                fatalError("out of memory")
+            }
+            return copy
+        }
         defer { strings.forEach { free($0) } }
 
         var core = MuxTunnelCoreConfig(
