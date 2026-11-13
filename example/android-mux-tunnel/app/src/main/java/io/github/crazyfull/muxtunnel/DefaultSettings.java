@@ -8,12 +8,12 @@ final class DefaultSettings {
     private DefaultSettings() {
     }
 
-    // Where the tunnels connect to: the CDN edge (or mux-tunnelServer itself). IP or domain.
-    static final String CDN_ADDRESS = "irc.x81.ir";
+    // Placeholders: enter your own CDN / server in the app. IP or domain.
+    static final String CDN_ADDRESS = "irc.cdn.ir";
     static final int CDN_PORT = 8080;
 
     // Websocket-style handshake sent as the first bytes of every tunnel connection.
-    static final String HANDSHAKE_HOST = "mojz.ir";
+    static final String HANDSHAKE_HOST = "sv1.server.ir";
     static final String HANDSHAKE_PATH = "/";
     static final String WEBSOCKET_KEY = "dGhlIHNhbXBsZSBub25jzQ==";
     // Value of Sec-WebSocket-Accept the 101 response must contain (empty = do not check).
