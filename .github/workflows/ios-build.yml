@@ -1,6 +1,8 @@
 name: iOS IPA (unsigned)
 
-# Manual build of the iOS app (example/ios-mux-tunnel). The IPA is NOT signed: a VPN (Network
+# Manual build of the iOS app (example/ios-mux-tunnel). Two IPAs are produced:
+#   MuxTunnel-trollstore.ipa  entitlements fake-signed in: install it with TrollStore (no developer account).
+#   MuxTunnel-unsigned.ipa    NOT signed: a VPN (Network
 # Extension) app needs your own Apple Developer provisioning profiles, so sign it afterwards with
 # your own tool (Xcode, fastlane, Sideloadly, ...) using profiles that include the
 # "Network Extensions" capability for both bundle ids:
@@ -59,11 +61,28 @@ jobs:
           (cd build/ipa && zip -qry "$GITHUB_WORKSPACE/MuxTunnel-unsigned.ipa" Payload)
           ls -l "$GITHUB_WORKSPACE/MuxTunnel-unsigned.ipa"
 
-      - name: Upload the IPA
+      - name: Package the TrollStore IPA
+        run: |
+          # TrollStore installs apps with any entitlements and needs no Apple Developer account, but
+          # the entitlements must be inside the binaries: add them with a fake signature (ldid).
+          brew install ldid
+          rm -rf build/trollstore && mkdir -p build/trollstore/Payload
+          cp -R build/derived/Build/Products/Release-iphoneos/MuxTunnel.app build/trollstore/Payload/
+          APP=build/trollstore/Payload/MuxTunnel.app
+          ldid -SExtension/MuxTunnelExtension.entitlements "$APP/PlugIns/MuxTunnelExtension.appex/MuxTunnelExtension"
+          ldid -SApp/MuxTunnel.entitlements "$APP/MuxTunnel"
+          echo "--- app entitlements";       ldid -e "$APP/MuxTunnel"
+          echo "--- extension entitlements"; ldid -e "$APP/PlugIns/MuxTunnelExtension.appex/MuxTunnelExtension"
+          (cd build/trollstore && zip -qry "$GITHUB_WORKSPACE/MuxTunnel-trollstore.ipa" Payload)
+          ls -l "$GITHUB_WORKSPACE/MuxTunnel-trollstore.ipa"
+
+      - name: Upload the IPAs
         uses: actions/upload-artifact@v4
         with:
-          name: mux-tunnel-ios-unsigned-ipa
-          path: MuxTunnel-unsigned.ipa
+          name: mux-tunnel-ios-ipas
+          path: |
+            MuxTunnel-unsigned.ipa
+            MuxTunnel-trollstore.ipa
           if-no-files-found: error
 
       - name: Publish a release
@@ -72,4 +91,6 @@ jobs:
         with:
           tag_name: ${{ inputs.release_tag }}
           name: Mux Tunnel (iOS, unsigned) ${{ inputs.release_tag }}
-          files: MuxTunnel-unsigned.ipa
+          files: |
+            MuxTunnel-unsigned.ipa
+            MuxTunnel-trollstore.ipa
