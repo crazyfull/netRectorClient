@@ -1,6 +1,6 @@
 # Mux Tunnel for iOS
 
-The iOS version of the [Android app](../android-mux-tunnel): the whole phone uses the
+The iOS version (**iOS 12.0 and later**, UIKit — SwiftUI would need iOS 13/14/15) of the [Android app](../android-mux-tunnel): the whole phone uses the
 [mux-tunnelClient](../mux-tunnelClient) tunnel as a VPN. A status bar at the top of the screen shows
 the state and **how many tunnels are really connected** (for example `Tunnels 2 / 3`).
 
@@ -16,7 +16,7 @@ apps -> utun -> hev-socks5-tunnel -> SOCKS5 127.0.0.1:<port> -> mux-tunnelClient
 | `native/` | C interface of the core (`MuxTunnelCore.h`), CMake file; built with `netRectorClient` and the example sources |
 | `Shared/` | types used by both targets: `TunnelConfiguration`, `TunnelStatus`, `TunnelConnectionState`, `TunnelProviderRequest`, … |
 | `Extension/` | the Packet Tunnel extension: `PacketTunnelProvider`, `MuxCoreRunner`, `HevTunnelRunner`, `HevConfigurationBuilder`, … |
-| `App/` | SwiftUI app: `MainView`, `StatusBarView`, `ServerSettingsSection`, `HandshakeSettingsSection`, `TunnelController`, … |
+| `App/` | UIKit app: `MainViewController`, `StatusBarView`, `LabeledTextField`, `TunnelCountView`, `TunnelController`, … |
 | `scripts/buildNativeCore.sh` | builds `Native/MuxTunnelCore.xcframework` (core + hev-socks5-tunnel, device and simulator) |
 | `project.yml` | [XcodeGen](https://github.com/yonaskolb/XcodeGen) description of the Xcode project |
 
@@ -31,7 +31,7 @@ Colors: green = all tunnels up, orange = starting or only some up, red = none up
 
 ## Build
 
-Needs macOS, Xcode 15+, CMake and XcodeGen (`brew install xcodegen`):
+Needs macOS, Xcode 15 or 16, CMake and XcodeGen (`brew install xcodegen`):
 
 ```sh
 git submodule update --init --recursive

@@ -3,14 +3,14 @@ options:
   bundleIdPrefix: io.github.crazyfull
   developmentLanguage: en
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "12.0"        # lowest version modern Xcode can still target; keep in sync with MIN_IOS_VERSION in scripts/buildNativeCore.sh
 settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     TARGETED_DEVICE_FAMILY: "1,2"
-    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "12.0"
 
 targets:
   MuxTunnel:
@@ -28,7 +28,8 @@ targets:
       properties:
         CFBundleDisplayName: Mux Tunnel
         CFBundleLocalizations: [en, fa]
-        UILaunchScreen: {}
+        UILaunchStoryboardName: LaunchScreen
+        UIUserInterfaceStyle: Light
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
     entitlements:
       path: App/MuxTunnel.entitlements

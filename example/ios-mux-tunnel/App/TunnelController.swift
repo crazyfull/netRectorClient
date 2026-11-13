@@ -1,13 +1,21 @@
-import Combine
 import Foundation
 import NetworkExtension
 
 /// Owns the VPN configuration of the system settings, starts and stops the tunnel, and keeps the
 /// status (including the number of connected tunnels) up to date for the UI.
-final class TunnelController: ObservableObject {
-    @Published var configuration: TunnelConfiguration
-    @Published private(set) var status = TunnelStatus.stopped
-    @Published private(set) var errorMessage: String?
+/// All methods and the delegate callbacks run on the main thread.
+final class TunnelController {
+    weak var delegate: TunnelControllerDelegate?
+
+    var configuration: TunnelConfiguration
+
+    private(set) var status = TunnelStatus.stopped {
+        didSet { delegate?.tunnelControllerDidUpdate(self) }
+    }
+
+    private(set) var errorMessage: String? {
+        didSet { delegate?.tunnelControllerDidUpdate(self) }
+    }
 
     private let store = TunnelConfigurationStore()
     private var manager: NETunnelProviderManager?

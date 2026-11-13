@@ -4,7 +4,8 @@
 # Run on macOS with Xcode, after `git submodule update --init --recursive`.
 set -euo pipefail
 
-readonly MIN_IOS_VERSION="15.0"
+# keep in sync with deploymentTarget in project.yml
+readonly MIN_IOS_VERSION="${MIN_IOS_VERSION:-12.0}"
 readonly PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly REPOSITORY_DIR="$(cd "$PROJECT_DIR/../.." && pwd)"
 readonly HEV_DIR="$REPOSITORY_DIR/third_party/hev-socks5-tunnel"
