@@ -20,6 +20,10 @@ final class TunnelController {
     /// What the app itself saw (system status changes, errors). Shown in the diagnostics screen,
     /// because it still exists when the extension process is dead.
     private(set) var eventLines: [String] = []
+
+    /// The extension log read when the extension reported a failure (the extension ends afterwards).
+    private(set) var failureLog: String?
+    private var isCollectingFailureLog = false
     private let eventFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -65,6 +69,8 @@ final class TunnelController {
 
     func start() {
         errorMessage = nil
+        failureLog = nil
+        isCollectingFailureLog = false
         do {
             try configuration.validate()
         } catch {
@@ -227,6 +233,9 @@ final class TunnelController {
             }
             DispatchQueue.main.async {
                 self?.status = reported
+                if reported.state == .failed {
+                    self?.collectFailureLog()
+                }
             }
         }
     }
@@ -245,6 +254,24 @@ final class TunnelController {
             }
         } catch {
             completion(nil)
+        }
+    }
+
+    /// The extension says it failed: read its log, show the reason and stop the VPN.
+    private func collectFailureLog() {
+        guard !isCollectingFailureLog else {
+            return
+        }
+        isCollectingFailureLog = true
+        fetchDiagnosticLog { [weak self] text in
+            guard let self = self else {
+                return
+            }
+            self.failureLog = text
+            self.logEvent("the extension reported a failure")
+            let reason = text?.components(separatedBy: "\n").last(where: { $0.contains("failed:") })
+            self.errorMessage = reason ?? NSLocalizedString("error.tunnelStopped", comment: "")
+            self.stop()
         }
     }
 

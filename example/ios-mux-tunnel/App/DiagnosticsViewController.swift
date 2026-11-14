@@ -50,7 +50,8 @@ final class DiagnosticsViewController: UIViewController {
                 return
             }
             let appPart = "== app\n" + self.controller.eventLines.joined(separator: "\n")
-            let extensionPart = text ?? NSLocalizedString("diagnostics.notRunning", comment: "")
+            let extensionPart = text ?? self.controller.failureLog
+                ?? NSLocalizedString("diagnostics.notRunning", comment: "")
             self.textView.text = appPart + "\n\n== extension\n" + extensionPart
         }
     }

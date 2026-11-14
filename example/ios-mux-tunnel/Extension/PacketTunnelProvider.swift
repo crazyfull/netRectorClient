@@ -150,7 +150,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             + "utun -> engine: \(txPackets) packets, \(txBytes) bytes\n"
             + "engine -> utun: \(rxPackets) packets, \(rxBytes) bytes\n"
             + "memory: \(Self.memoryFootprintMegabytes()) MB\n---\n"
-        return header + DiagnosticLog.shared.text
+        return header + DiagnosticLog.shared.text + "\n--- tun2socks engine log\n" + HevConfigurationBuilder.readLogTail()
     }
 
     private static func memoryFootprintMegabytes() -> Int {
@@ -171,7 +171,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
 
     /// Called when one of the engines ends by itself: the VPN cannot work without both.
     private func fail(with error: Error) {
+        DiagnosticLog.shared.add("failed: \(error.localizedDescription)")
         state = .failed
-        cancelTunnelWithError(error)
+        // Stay alive for a while: the app reads the log (the only way to see why) and then stops
+        // the tunnel itself. Without this the process ends and the log is gone.
+        DispatchQueue.global().asyncAfter(deadline: .now() + 60) { [weak self] in
+            self?.cancelTunnelWithError(error)
+        }
     }
 }
