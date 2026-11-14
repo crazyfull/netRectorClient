@@ -2,6 +2,7 @@
 
 #include "ClientApplication.h"
 #include "ClientConfig.h"
+#include "clsLog.h"
 
 #include <mutex>
 #include <string>
@@ -11,6 +12,15 @@ namespace {
 std::mutex gMutex;
 ClientApplication* gApplication = nullptr;     // set while muxTunnelCoreRun() is active
 bool gStopRequested = false;                   // a stop that arrived before the run registered itself
+
+MuxTunnelCoreLogFunction gLogFunction = nullptr;
+
+void forwardLog(int level, const char* message)
+{
+    MuxTunnelCoreLogFunction function = gLogFunction;
+    if (function)
+        function(level, message);
+}
 
 std::string toString(const char* text)
 {
@@ -67,6 +77,12 @@ int32_t muxTunnelCoreRun(const MuxTunnelCoreConfig* source)
         gApplication = nullptr;
     }
     return code;
+}
+
+void muxTunnelCoreSetLogFunction(MuxTunnelCoreLogFunction function)
+{
+    gLogFunction = function;
+    netrector::setLogHandler(function ? forwardLog : nullptr);
 }
 
 void muxTunnelCoreStop(void)

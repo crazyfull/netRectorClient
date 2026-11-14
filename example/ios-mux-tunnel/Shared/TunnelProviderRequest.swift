@@ -5,6 +5,9 @@ enum TunnelProviderRequest: String, Codable {
     /// Answered with an encoded TunnelStatus.
     case status
 
+    /// Answered with the diagnostic log of the extension as UTF-8 text.
+    case log
+
     func encoded() throws -> Data {
         return try JSONEncoder().encode(self)
     }

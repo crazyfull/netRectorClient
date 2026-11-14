@@ -9,6 +9,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
     private let contentStack = UIStackView()
     private let startButton = UIButton(type: .system)
     private let errorLabel = UILabel()
+    private let diagnosticsButton = UIButton(type: .system)
 
     private let addressField = LabeledTextField(captionKey: "field.address", keyboardType: .URL)
     private let portField = LabeledTextField(captionKey: "field.port", keyboardType: .numberPad)
@@ -69,6 +70,11 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         controller.toggle()
     }
 
+    @objc private func diagnosticsTapped() {
+        let screen = UINavigationController(rootViewController: DiagnosticsViewController(controller: controller))
+        present(screen, animated: true)
+    }
+
     private func show(_ configuration: TunnelConfiguration) {
         addressField.text = configuration.cdnAddress
         portField.text = String(configuration.cdnPort)
@@ -100,6 +106,9 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         startButton.addTarget(self, action: #selector(startStopTapped), for: .touchUpInside)
         startButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
+        diagnosticsButton.setTitle(NSLocalizedString("button.diagnostics", comment: ""), for: .normal)
+        diagnosticsButton.addTarget(self, action: #selector(diagnosticsTapped), for: .touchUpInside)
+
         errorLabel.font = UIFont.systemFont(ofSize: 14)
         errorLabel.textColor = AppColor.error
         errorLabel.numberOfLines = 0
@@ -124,7 +133,8 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
          handshakePathField,
          webSocketKeyField,
          expectedAcceptField,
-         noteLabel].forEach { contentStack.addArrangedSubview($0) }
+         noteLabel,
+         diagnosticsButton].forEach { contentStack.addArrangedSubview($0) }
 
         scrollView.keyboardDismissMode = .interactive
         scrollView.alwaysBounceVertical = true

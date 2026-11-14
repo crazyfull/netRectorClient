@@ -1,4 +1,6 @@
 import Foundation
+import HevSocks5Tunnel
+import MuxTunnelCore
 import NetworkExtension
 
 /// The Packet Tunnel extension: the VPN itself. It runs the mux client and the tun2socks engine
@@ -30,18 +32,34 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
 
     override func startTunnel(options: [String: NSObject]?, completionHandler: @escaping (Error?) -> Void) {
         state = .starting
+        muxTunnelCoreSetLogFunction { level, message in
+            if let message = message {
+                DiagnosticLog.shared.add("core[\(level)] \(String(cString: message))")
+            }
+        }
+        DiagnosticLog.shared.add("startTunnel")
 
         do {
-            let configuration = try loadConfiguration()
+            var configuration = try loadConfiguration()
             try configuration.validate()
+
+            // Resolve the server now: later the system DNS points into the tunnel
+            let host = configuration.cdnAddress.trimmingCharacters(in: .whitespaces)
+            guard let address = ServerAddressResolver.resolve(host) else {
+                throw TunnelProviderError.cannotResolveServer(host: host)
+            }
+            DiagnosticLog.shared.add("server \(host) -> \(address):\(configuration.cdnPort), tunnels \(configuration.tunnelCount)")
+            configuration.cdnAddress = address
             self.configuration = configuration
 
             guard let socksPort = LoopbackPortFinder.findFreePort() else {
                 throw TunnelProviderError.noFreePort
             }
             let configurationPath = try HevConfigurationBuilder.writeFile(socksPort: socksPort)
+            DiagnosticLog.shared.add("socks5 listener 127.0.0.1:\(socksPort)")
 
             muxCore.start(configuration: configuration, socksPort: socksPort) { [weak self] code in
+                DiagnosticLog.shared.add("mux core stopped, code \(code)")
                 self?.fail(with: TunnelProviderError.muxClientStopped(code: code))
             }
 
@@ -50,14 +68,17 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                     return
                 }
                 if let error = error {
+                    DiagnosticLog.shared.add("setTunnelNetworkSettings failed: \(error.localizedDescription)")
                     self.stopEngines()
                     self.state = .failed
                     completionHandler(error)
                     return
                 }
+                DiagnosticLog.shared.add("network settings applied")
                 self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)
             }
         } catch {
+            DiagnosticLog.shared.add("start failed: \(error.localizedDescription)")
             muxCore.stop()
             state = .failed
             completionHandler(error)
@@ -82,6 +103,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         switch request {
         case .status:
             completionHandler(try? currentStatus().encoded())
+        case .log:
+            completionHandler(diagnosticText().data(using: .utf8))
         }
     }
 
@@ -97,13 +120,16 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private func startTunnelEngine(configurationPath: String, completionHandler: @escaping (Error?) -> Void) {
         guard let descriptor = TunnelDescriptorLocator.locate(packetFlow: packetFlow) else {
+            DiagnosticLog.shared.add("utun descriptor not found")
             stopEngines()
             state = .failed
             completionHandler(TunnelProviderError.noTunnelDescriptor)
             return
         }
 
-        tunnelEngine.start(configurationPath: configurationPath, tunnelDescriptor: descriptor) { [weak self] _ in
+        DiagnosticLog.shared.add("utun descriptor \(descriptor)")
+        tunnelEngine.start(configurationPath: configurationPath, tunnelDescriptor: descriptor) { [weak self] code in
+            DiagnosticLog.shared.add("tun2socks engine stopped, code \(code)")
             self?.fail(with: TunnelProviderError.tunnelEngineFailed)
         }
         state = .running
@@ -114,6 +140,28 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         return TunnelStatus(state: state,
                             connectedTunnels: state == .running ? muxCore.connectedTunnels : 0,
                             totalTunnels: configuration?.tunnelCount ?? 0)
+    }
+
+    /// The log plus the live numbers: packets moved through the utun interface tell where it stops.
+    private func diagnosticText() -> String {
+        var txPackets = 0, txBytes = 0, rxPackets = 0, rxBytes = 0
+        hev_socks5_tunnel_stats(&txPackets, &txBytes, &rxPackets, &rxBytes)
+        let header = "state \(state), tunnels \(muxCore.connectedTunnels)/\(configuration?.tunnelCount ?? 0)\n"
+            + "utun -> engine: \(txPackets) packets, \(txBytes) bytes\n"
+            + "engine -> utun: \(rxPackets) packets, \(rxBytes) bytes\n"
+            + "memory: \(Self.memoryFootprintMegabytes()) MB\n---\n"
+        return header + DiagnosticLog.shared.text
+    }
+
+    private static func memoryFootprintMegabytes() -> Int {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? Int(info.phys_footprint / (1024 * 1024)) : -1
     }
 
     private func stopEngines() {

@@ -203,6 +203,24 @@ final class TunnelController {
         }
     }
 
+    /// Asks the extension for its diagnostic log. `nil` when the extension is not running.
+    func fetchDiagnosticLog(completion: @escaping (String?) -> Void) {
+        guard let session = manager?.connection as? NETunnelProviderSession,
+              session.status == .connected || session.status == .connecting || session.status == .reasserting,
+              let message = try? TunnelProviderRequest.log.encoded() else {
+            completion(nil)
+            return
+        }
+        do {
+            try session.sendProviderMessage(message) { response in
+                let text = response.flatMap { String(data: $0, encoding: .utf8) }
+                DispatchQueue.main.async { completion(text) }
+            }
+        } catch {
+            completion(nil)
+        }
+    }
+
     private func readLastError(from connection: NEVPNConnection) {
         guard #available(iOS 16.0, *) else {
             return

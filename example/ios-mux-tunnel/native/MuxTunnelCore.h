@@ -44,6 +44,11 @@ void muxTunnelCoreStop(void);
 
 int32_t muxTunnelCoreConnectedTunnels(void);
 
+// Receives the library log (errors, warnings, info). level: 0 error, 1 warn, 2 info, 3 debug.
+// The function may be called from any thread. nullptr restores the default (stderr).
+typedef void (*MuxTunnelCoreLogFunction)(int32_t level, const char* message);
+void muxTunnelCoreSetLogFunction(MuxTunnelCoreLogFunction function);
+
 // Finds the file descriptor of the utun interface of this Network Extension process
 // (-1 when it cannot be found). Fallback for packetFlow's "socket.fileDescriptor" key.
 int32_t muxTunnelCoreFindUtunDescriptor(void);

@@ -23,3 +23,10 @@
 "error.port" = "پورت باید بین ۱ تا ۶۵۵۳۵ باشد";
 "error.tunnels" = "تعداد تونل باید بین %d تا %d باشد";
 "error.path" = "مسیر باید با / شروع شود";
+
+"button.diagnostics" = "عیب‌یابی";
+"diagnostics.title" = "عیب‌یابی";
+"diagnostics.refresh" = "بازخوانی";
+"diagnostics.copy" = "کپی";
+"diagnostics.close" = "بستن";
+"diagnostics.notRunning" = "اکستنشن در حال اجرا نیست و لاگی وجود ندارد. اول تونل را شروع کن.";

@@ -6,6 +6,7 @@ enum TunnelProviderError: LocalizedError {
     case noFreePort
     case noTunnelDescriptor
     case tunnelEngineFailed
+    case cannotResolveServer(host: String)
     case muxClientStopped(code: Int32)
 
     var errorDescription: String? {
@@ -18,6 +19,8 @@ enum TunnelProviderError: LocalizedError {
             return "The tunnel interface was not found."
         case .tunnelEngineFailed:
             return "The tun2socks engine could not start."
+        case .cannotResolveServer(let host):
+            return "Cannot resolve the server address \(host)."
         case .muxClientStopped(let code):
             return "The mux client stopped unexpectedly (code \(code))."
         }

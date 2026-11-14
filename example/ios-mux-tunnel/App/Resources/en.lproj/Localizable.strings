@@ -23,3 +23,10 @@
 "error.port" = "Port must be 1-65535";
 "error.tunnels" = "Tunnels must be %d-%d";
 "error.path" = "The path must start with /";
+
+"button.diagnostics" = "Diagnostics";
+"diagnostics.title" = "Diagnostics";
+"diagnostics.refresh" = "Refresh";
+"diagnostics.copy" = "Copy";
+"diagnostics.close" = "Close";
+"diagnostics.notRunning" = "The extension is not running, so there is no log. Start the tunnel first.";
