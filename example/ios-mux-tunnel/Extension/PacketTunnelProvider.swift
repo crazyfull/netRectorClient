@@ -38,7 +38,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                 DiagnosticLog.shared.add("core[\(level)] \(String(cString: message))")
             }
         }
-        DiagnosticLog.shared.add("startTunnel")
+        DiagnosticLog.shared.add("startTunnel, build \(DefaultTunnelSettings.buildStamp)")
 
         do {
             var configuration = try loadConfiguration()
@@ -51,6 +51,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             }
             DiagnosticLog.shared.add("server \(host) -> \(address):\(configuration.cdnPort), tunnels \(configuration.tunnelCount)")
             configuration.cdnAddress = address
+            ConnectivityProbe.run(label: "before vpn", address: address, port: UInt16(configuration.cdnPort))
             self.configuration = configuration
 
             guard let socksPort = LoopbackPortFinder.findFreePort() else {
@@ -75,7 +76,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                     completionHandler(error)
                     return
                 }
-                DiagnosticLog.shared.add("network settings applied")
+                DiagnosticLog.shared.add("network settings applied, server \(address) excluded from the routes")
+                ConnectivityProbe.run(label: "after vpn", address: address, port: UInt16(configuration.cdnPort))
                 self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)
             }
         } catch {

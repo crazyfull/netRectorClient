@@ -3,6 +3,9 @@ import Foundation
 /// Static defaults of the app. They mirror example/mux-tunnelClient/src/DefaultClientConfig.h;
 /// the user changes the editable ones in the app (saved by TunnelConfigurationStore).
 enum DefaultTunnelSettings {
+    // Shown in the diagnostic log, to know which build is installed.
+    static let buildStamp = "2026-11-15 c"
+
     // Placeholders: enter your own CDN / server in the app. IP or domain.
     static let cdnAddress = "irc.cdn.ir"
     static let cdnPort = 8080
