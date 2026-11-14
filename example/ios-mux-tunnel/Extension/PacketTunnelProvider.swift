@@ -64,7 +64,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                 self?.fail(with: TunnelProviderError.muxClientStopped(code: code))
             }
 
-            setTunnelNetworkSettings(TunnelNetworkSettingsFactory.makeSettings()) { [weak self] error in
+            setTunnelNetworkSettings(TunnelNetworkSettingsFactory.makeSettings(excludingServerAddress: address)) { [weak self] error in
                 guard let self = self else {
                     return
                 }
