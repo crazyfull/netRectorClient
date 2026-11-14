@@ -17,6 +17,15 @@ final class TunnelController {
         didSet { delegate?.tunnelControllerDidUpdate(self) }
     }
 
+    /// What the app itself saw (system status changes, errors). Shown in the diagnostics screen,
+    /// because it still exists when the extension process is dead.
+    private(set) var eventLines: [String] = []
+    private let eventFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        return formatter
+    }()
+
     private let store = TunnelConfigurationStore()
     private var manager: NETunnelProviderManager?
     private var statusObserver: NSObjectProtocol?
@@ -73,6 +82,7 @@ final class TunnelController {
         }
 
         status = TunnelStatus(state: .starting, connectedTunnels: 0, totalTunnels: configuration.tunnelCount)
+        logEvent("start tapped")
 
         // Saving shows the system's "Add VPN configuration" prompt the first time
         manager.saveToPreferences { [weak self] error in
@@ -93,11 +103,19 @@ final class TunnelController {
                     self.attach(manager)
                     do {
                         try manager.connection.startVPNTunnel()
+                        self.logEvent("startVPNTunnel called")
                     } catch {
                         self.fail(with: error)
                     }
                 }
             }
+        }
+    }
+
+    func logEvent(_ text: String) {
+        eventLines.append("\(eventFormatter.string(from: Date())) \(text)")
+        if eventLines.count > 100 {
+            eventLines.removeFirst(eventLines.count - 100)
         }
     }
 
@@ -158,6 +176,11 @@ final class TunnelController {
             return
         }
 
+        if lastLoggedSystemStatus != connection.status {
+            lastLoggedSystemStatus = connection.status
+            logEvent("system status: \(Self.name(of: connection.status))")
+        }
+
         switch connection.status {
         case .connected:
             if status.state != .running {
@@ -170,7 +193,12 @@ final class TunnelController {
             let wasStarting = status.state == .starting || status.state == .running
             status = TunnelStatus.stopped
             if wasStarting {
-                readLastError(from: connection)
+                if #available(iOS 16.0, *) {
+                    readLastError(from: connection)
+                } else {
+                    // Older systems do not tell why: most likely the extension crashed or was killed
+                    errorMessage = NSLocalizedString("error.tunnelStopped", comment: "")
+                }
             }
         @unknown default:
             break
@@ -206,7 +234,6 @@ final class TunnelController {
     /// Asks the extension for its diagnostic log. `nil` when the extension is not running.
     func fetchDiagnosticLog(completion: @escaping (String?) -> Void) {
         guard let session = manager?.connection as? NETunnelProviderSession,
-              session.status == .connected || session.status == .connecting || session.status == .reasserting,
               let message = try? TunnelProviderRequest.log.encoded() else {
             completion(nil)
             return
@@ -218,6 +245,20 @@ final class TunnelController {
             }
         } catch {
             completion(nil)
+        }
+    }
+
+    private var lastLoggedSystemStatus: NEVPNStatus?
+
+    private static func name(of status: NEVPNStatus) -> String {
+        switch status {
+        case .invalid: return "invalid"
+        case .disconnected: return "disconnected"
+        case .connecting: return "connecting"
+        case .connected: return "connected"
+        case .reasserting: return "reasserting"
+        case .disconnecting: return "disconnecting"
+        @unknown default: return "unknown"
         }
     }
 
@@ -238,6 +279,7 @@ final class TunnelController {
 
     private func fail(with error: Error) {
         DispatchQueue.main.async {
+            self.logEvent("error: \(error.localizedDescription)")
             self.errorMessage = error.localizedDescription
             self.status = TunnelStatus(state: .failed, connectedTunnels: 0, totalTunnels: 0)
         }

@@ -30,3 +30,4 @@
 "diagnostics.copy" = "کپی";
 "diagnostics.close" = "بستن";
 "diagnostics.notRunning" = "اکستنشن در حال اجرا نیست و لاگی وجود ندارد. اول تونل را شروع کن.";
+"error.tunnelStopped" = "تونل بلافاصله بعد از شروع متوقف شد. برای جزئیات «عیب‌یابی» را باز کن.";

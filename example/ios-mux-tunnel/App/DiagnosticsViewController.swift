@@ -46,7 +46,12 @@ final class DiagnosticsViewController: UIViewController {
 
     @objc private func refresh() {
         controller.fetchDiagnosticLog { [weak self] text in
-            self?.textView.text = text ?? NSLocalizedString("diagnostics.notRunning", comment: "")
+            guard let self = self else {
+                return
+            }
+            let appPart = "== app\n" + self.controller.eventLines.joined(separator: "\n")
+            let extensionPart = text ?? NSLocalizedString("diagnostics.notRunning", comment: "")
+            self.textView.text = appPart + "\n\n== extension\n" + extensionPart
         }
     }
 

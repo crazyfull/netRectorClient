@@ -30,3 +30,4 @@
 "diagnostics.copy" = "Copy";
 "diagnostics.close" = "Close";
 "diagnostics.notRunning" = "The extension is not running, so there is no log. Start the tunnel first.";
+"error.tunnelStopped" = "The tunnel stopped right after starting. Open Diagnostics for details.";
