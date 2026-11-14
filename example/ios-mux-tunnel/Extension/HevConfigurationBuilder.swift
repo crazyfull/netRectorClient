@@ -26,7 +26,7 @@ enum HevConfigurationBuilder {
           connect-timeout: 10000
           tcp-read-write-timeout: 300000
           log-file: \(logPath)
-          log-level: info
+          log-level: debug
 
         """
     }

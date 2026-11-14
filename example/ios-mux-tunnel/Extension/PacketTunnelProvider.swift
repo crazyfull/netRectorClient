@@ -12,6 +12,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private let tunnelEngine = HevTunnelRunner()
     private var configuration: TunnelConfiguration?
     private var statsTimer: DispatchSourceTimer?
+    private let engineLogReader = HevLogReader()
 
     // The state is written from the provider queue and from the engine threads
     private let stateLock = NSLock()
@@ -177,6 +178,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
             DiagnosticLog.shared.sendStatus(self.currentStatus())
+            self.engineLogReader.readNewLines().forEach { DiagnosticLog.shared.add("hev: \($0)") }
 
             round += 1
             guard round % 3 == 0 else {

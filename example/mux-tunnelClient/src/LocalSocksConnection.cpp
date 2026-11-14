@@ -95,6 +95,9 @@ void LocalSocksConnection::handleGreeting()
     if (result == Socks5ParseResult::Incomplete)
         return;
 
+    NR_LOG(LOG_DEBUG, "[client] SOCKS5 greeting received (%s, no-auth offered: %s)",
+           result == Socks5ParseResult::Invalid ? "invalid" : "valid", noAuthOffered ? "yes" : "no");
+
     if (result == Socks5ParseResult::Invalid) {
         m_state = State::Failed;
         close(true);
