@@ -51,6 +51,9 @@ final class TunnelController {
 
     init() {
         configuration = store.load()
+        diagnosticReceiver.onStatus = { [weak self] reported in
+            self?.extensionReported(reported)
+        }
         diagnosticReceiver.start()
         loadManager()
     }
@@ -269,22 +272,33 @@ final class TunnelController {
         }
     }
 
-    /// The extension says it failed: read its log, show the reason and stop the VPN.
+    /// The extension reports its status over the diagnostic channel (the system's message channel
+    /// does not work on every installation).
+    private func extensionReported(_ reported: TunnelStatus) {
+        guard manager?.connection.status == .connected else {
+            return
+        }
+        if status != reported {
+            status = reported
+        }
+        if reported.state == .failed {
+            collectFailureLog()
+        }
+    }
+
+    /// The extension says it failed: keep its log, show the reason and stop the VPN.
     private func collectFailureLog() {
         guard !isCollectingFailureLog else {
             return
         }
         isCollectingFailureLog = true
-        fetchDiagnosticLog { [weak self] text in
-            guard let self = self else {
-                return
-            }
-            self.failureLog = text
-            self.logEvent("the extension reported a failure")
-            let reason = text?.components(separatedBy: "\n").last(where: { $0.contains("failed:") })
-            self.errorMessage = reason ?? NSLocalizedString("error.tunnelStopped", comment: "")
-            self.stop()
-        }
+
+        let text = diagnosticReceiver.text
+        failureLog = text
+        logEvent("the extension reported a failure")
+        let reason = text.components(separatedBy: "\n").last(where: { $0.contains("failed:") })
+        errorMessage = reason ?? NSLocalizedString("error.tunnelStopped", comment: "")
+        stop()
     }
 
     private var lastLoggedSystemStatus: NEVPNStatus?

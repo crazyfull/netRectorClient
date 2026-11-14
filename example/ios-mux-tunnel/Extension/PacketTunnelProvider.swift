@@ -166,12 +166,20 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         return result == KERN_SUCCESS ? Int(info.phys_footprint / (1024 * 1024)) : -1
     }
 
-    /// Every few seconds: tunnels, packets through the utun interface and memory, into the log.
+    /// Every second the status goes to the app; every third second a line with the packet counters
+    /// (packets through the utun interface tell where traffic stops) goes into the log.
     private func startStatsTimer() {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        timer.schedule(deadline: .now() + 3, repeating: 3)
+        var round = 0
+        timer.schedule(deadline: .now() + 1, repeating: 1)
         timer.setEventHandler { [weak self] in
             guard let self = self else {
+                return
+            }
+            DiagnosticLog.shared.sendStatus(self.currentStatus())
+
+            round += 1
+            guard round % 3 == 0 else {
                 return
             }
             var txPackets = 0, txBytes = 0, rxPackets = 0, rxBytes = 0

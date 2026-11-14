@@ -8,6 +8,9 @@ final class DiagnosticReceiver {
     private let lock = NSLock()
     private let maxLines = 500
 
+    /// Called on the main thread when the extension reports its status.
+    var onStatus: ((TunnelStatus) -> Void)?
+
     var text: String {
         lock.lock()
         defer { lock.unlock() }
@@ -67,7 +70,14 @@ final class DiagnosticReceiver {
             if count <= 0 {
                 break
             }
-            append(String(decoding: buffer[0..<count], as: UTF8.self))
+            let message = String(decoding: buffer[0..<count], as: UTF8.self)
+            if let status = DiagnosticChannel.status(from: message) {
+                DispatchQueue.main.async { [weak self] in
+                    self?.onStatus?(status)
+                }
+            } else {
+                append(message)
+            }
         }
     }
 

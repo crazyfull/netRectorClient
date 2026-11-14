@@ -27,6 +27,13 @@ final class DiagnosticLog {
         send(line)
     }
 
+    /// Sends the tunnel status to the app (not kept in the log).
+    func sendStatus(_ status: TunnelStatus) {
+        lock.lock()
+        send(DiagnosticChannel.statusMessage(for: status))
+        lock.unlock()
+    }
+
     var text: String {
         lock.lock()
         defer { lock.unlock() }
