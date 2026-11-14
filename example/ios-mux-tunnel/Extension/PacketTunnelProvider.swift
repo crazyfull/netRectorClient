@@ -11,6 +11,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private let muxCore = MuxCoreRunner()
     private let tunnelEngine = HevTunnelRunner()
     private var configuration: TunnelConfiguration?
+    private var statsTimer: DispatchSourceTimer?
 
     // The state is written from the provider queue and from the engine threads
     private let stateLock = NSLock()
@@ -133,6 +134,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             self?.fail(with: TunnelProviderError.tunnelEngineFailed)
         }
         state = .running
+        startStatsTimer()
+        DiagnosticLog.shared.add("tunnel running")
         completionHandler(nil)
     }
 
@@ -144,11 +147,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
 
     /// The log plus the live numbers: packets moved through the utun interface tell where it stops.
     private func diagnosticText() -> String {
-        var txPackets = 0, txBytes = 0, rxPackets = 0, rxBytes = 0
-        hev_socks5_tunnel_stats(&txPackets, &txBytes, &rxPackets, &rxBytes)
         let header = "state \(state), tunnels \(muxCore.connectedTunnels)/\(configuration?.tunnelCount ?? 0)\n"
-            + "utun -> engine: \(txPackets) packets, \(txBytes) bytes\n"
-            + "engine -> utun: \(rxPackets) packets, \(rxBytes) bytes\n"
             + "memory: \(Self.memoryFootprintMegabytes()) MB\n---\n"
         return header + DiagnosticLog.shared.text + "\n--- tun2socks engine log\n" + HevConfigurationBuilder.readLogTail()
     }
@@ -164,7 +163,27 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         return result == KERN_SUCCESS ? Int(info.phys_footprint / (1024 * 1024)) : -1
     }
 
+    /// Every few seconds: tunnels, packets through the utun interface and memory, into the log.
+    private func startStatsTimer() {
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
+        timer.schedule(deadline: .now() + 3, repeating: 3)
+        timer.setEventHandler { [weak self] in
+            guard let self = self else {
+                return
+            }
+            var txPackets = 0, txBytes = 0, rxPackets = 0, rxBytes = 0
+            hev_socks5_tunnel_stats(&txPackets, &txBytes, &rxPackets, &rxBytes)
+            DiagnosticLog.shared.add("tick tunnels \(self.muxCore.connectedTunnels)/\(self.configuration?.tunnelCount ?? 0)"
+                + " utun->engine \(txPackets)p/\(txBytes)B engine->utun \(rxPackets)p/\(rxBytes)B"
+                + " mem \(Self.memoryFootprintMegabytes())MB")
+        }
+        timer.resume()
+        statsTimer = timer
+    }
+
     private func stopEngines() {
+        statsTimer?.cancel()
+        statsTimer = nil
         tunnelEngine.stop()
         muxCore.stop()
     }

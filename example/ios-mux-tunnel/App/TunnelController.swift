@@ -30,6 +30,10 @@ final class TunnelController {
         return formatter
     }()
 
+    let diagnosticReceiver = DiagnosticReceiver()
+    private var userRequestedStop = false
+    private var lastReplyWasOk: Bool?
+
     private let store = TunnelConfigurationStore()
     private var manager: NETunnelProviderManager?
     private var statusObserver: NSObjectProtocol?
@@ -47,6 +51,7 @@ final class TunnelController {
 
     init() {
         configuration = store.load()
+        diagnosticReceiver.start()
         loadManager()
     }
 
@@ -71,6 +76,8 @@ final class TunnelController {
         errorMessage = nil
         failureLog = nil
         isCollectingFailureLog = false
+        userRequestedStop = false
+        diagnosticReceiver.clear()
         do {
             try configuration.validate()
         } catch {
@@ -126,6 +133,7 @@ final class TunnelController {
     }
 
     func stop() {
+        userRequestedStop = true
         manager?.connection.stopVPNTunnel()
     }
 
@@ -198,7 +206,7 @@ final class TunnelController {
         case .disconnecting, .disconnected, .invalid:
             let wasStarting = status.state == .starting || status.state == .running
             status = TunnelStatus.stopped
-            if wasStarting {
+            if wasStarting && !userRequestedStop {
                 if #available(iOS 16.0, *) {
                     readLastError(from: connection)
                 } else {
@@ -227,11 +235,15 @@ final class TunnelController {
         }
 
         try? session.sendProviderMessage(message) { [weak self] response in
-            guard let response = response,
-                  let reported = try? TunnelStatus.decoded(from: response) else {
-                return
-            }
+            let reported = response.flatMap { try? TunnelStatus.decoded(from: $0) }
             DispatchQueue.main.async {
+                if self?.lastReplyWasOk != (reported != nil) {
+                    self?.lastReplyWasOk = reported != nil
+                    self?.logEvent(reported != nil ? "extension answers status requests" : "extension does not answer status requests")
+                }
+                guard let reported = reported else {
+                    return
+                }
                 self?.status = reported
                 if reported.state == .failed {
                     self?.collectFailureLog()

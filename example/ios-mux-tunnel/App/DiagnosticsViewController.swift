@@ -4,6 +4,7 @@ import UIKit
 final class DiagnosticsViewController: UIViewController {
     private let controller: TunnelController
     private let textView = UITextView()
+    private var refreshTimer: Timer?
 
     init(controller: TunnelController) {
         self.controller = controller
@@ -44,6 +45,19 @@ final class DiagnosticsViewController: UIViewController {
         refresh()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            self?.refresh()
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+
     @objc private func refresh() {
         controller.fetchDiagnosticLog { [weak self] text in
             guard let self = self else {
@@ -52,7 +66,9 @@ final class DiagnosticsViewController: UIViewController {
             let appPart = "== app\n" + self.controller.eventLines.joined(separator: "\n")
             let extensionPart = text ?? self.controller.failureLog
                 ?? NSLocalizedString("diagnostics.notRunning", comment: "")
-            self.textView.text = appPart + "\n\n== extension\n" + extensionPart
+            self.textView.text = appPart
+                + "\n\n== extension (live)\n" + self.controller.diagnosticReceiver.text
+                + "\n\n== extension (reply)\n" + extensionPart
         }
     }
 
