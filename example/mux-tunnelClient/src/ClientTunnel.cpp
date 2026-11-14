@@ -23,6 +23,7 @@ void ClientTunnel::handleOnConnected()
     // The handshake request must be the first thing on the wire, so the mux layer (keep-alive
     // pings) is not started here. MultiplexedTunnel::handleOnConnected() is called from
     // completeHandshake().
+    NR_LOG(LOG_INFO, "[client] TCP connected to %s:%u, sending the handshake", m_config.cdnAddress.c_str(), m_config.cdnPort);
     const std::string& request = m_handshake.request();
     if (!send(request.data(), request.size())) {
         close(true);
@@ -101,6 +102,12 @@ void ClientTunnel::onConnectFailed()
 
 void ClientTunnel::onClose()
 {
+    const char* stateName = m_state == State::Connecting ? "connecting"
+                          : m_state == State::AwaitingResponse ? "waiting for the handshake response"
+                          : m_state == State::Established ? "established" : "failed";
+    NR_LOG(LOG_INFO, "[client] tunnel connection closed while %s (error %d: %s)",
+           stateName, getErrorCode(), getErrorCode() ? std::strerror(getErrorCode()) : "none");
+
     // All streams were already closed by MultiplexedTunnel.
     m_pool.onTunnelClosed(*this);
 }

@@ -82,7 +82,7 @@ final class MuxCoreRunner {
             webSocketKey: UnsafePointer(strings[4]),
             expectedAccept: UnsafePointer(strings[5]),
             keepAliveSeconds: DefaultTunnelSettings.keepAliveSeconds,
-            verbose: 0)
+            verbose: 1)
 
         return muxTunnelCoreRun(&core)
     }
