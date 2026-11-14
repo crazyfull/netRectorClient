@@ -4,7 +4,7 @@ import Foundation
 /// the user changes the editable ones in the app (saved by TunnelConfigurationStore).
 enum DefaultTunnelSettings {
     // Shown in the diagnostic log, to know which build is installed.
-    static let buildStamp = "2026-11-15 c"
+    static let buildStamp = "2026-11-15 d"
 
     // Placeholders: enter your own CDN / server in the app. IP or domain.
     static let cdnAddress = "irc.cdn.ir"

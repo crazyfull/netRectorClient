@@ -60,11 +60,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             let configurationPath = try HevConfigurationBuilder.writeFile(socksPort: socksPort)
             DiagnosticLog.shared.add("socks5 listener 127.0.0.1:\(socksPort)")
 
-            muxCore.start(configuration: configuration, socksPort: socksPort) { [weak self] code in
-                DiagnosticLog.shared.add("mux core stopped, code \(code)")
-                self?.fail(with: TunnelProviderError.muxClientStopped(code: code))
-            }
-
             setTunnelNetworkSettings(TunnelNetworkSettingsFactory.makeSettings(excludingServerAddress: address)) { [weak self] error in
                 guard let self = self else {
                     return
@@ -78,6 +73,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
                 DiagnosticLog.shared.add("network settings applied, server \(address) excluded from the routes")
                 ConnectivityProbe.run(label: "after vpn", address: address, port: UInt16(configuration.cdnPort))
+
+                // The core connects to the server only now: the routes (with the server excluded) are in place
+                self.muxCore.start(configuration: configuration, socksPort: socksPort) { [weak self] code in
+                    DiagnosticLog.shared.add("mux core stopped, code \(code)")
+                    self?.fail(with: TunnelProviderError.muxClientStopped(code: code))
+                }
                 self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)
             }
         } catch {
