@@ -80,6 +80,13 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                     DiagnosticLog.shared.add("mux core stopped, code \(code)")
                     self?.fail(with: TunnelProviderError.muxClientStopped(code: code))
                 }
+
+                // Is the local SOCKS5 listener reachable from this process? (hev connects to it)
+                for delay in [1.0, 8.0] {
+                    DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                        ConnectivityProbe.run(label: "socks5 listener after \(Int(delay)) s", address: DefaultTunnelSettings.socksAddress, port: socksPort)
+                    }
+                }
                 self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)
             }
         } catch {
