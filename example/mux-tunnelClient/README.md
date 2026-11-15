@@ -57,7 +57,7 @@ overridden at run time:
 
 | option | default | meaning |
 |---|---|---|
-| `--listen IP:PORT` | `0.0.0.0:1080` | local SOCKS5 listener |
+| `--listen IP:PORT` | `0.0.0.0:1080` | local SOCKS5 listener (`127.0.0.1`, `::1` or `localhost`: listens on IPv4 **and** IPv6 loopback, same port) |
 | `--cdn IP:PORT` | `irc.cdn.ir:8080` | where the tunnels connect (CDN edge or the server) |
 | `--host NAME` | `mojz.ir` | `Host` header of the upgrade request |
 | `--path PATH` | `/` | request path |

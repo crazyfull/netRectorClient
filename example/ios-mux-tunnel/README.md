@@ -5,7 +5,7 @@ The iOS version (**iOS 12.0 and later**, UIKit — SwiftUI would need iOS 13/14/
 the state and **how many tunnels are really connected** (for example `Tunnels 2 / 3`).
 
 ```
-apps -> utun -> hev-socks5-tunnel -> SOCKS5 127.0.0.1:<port> -> mux-tunnelClient core -> CDN -> mux-tunnelServer
+apps -> utun -> hev-socks5-tunnel -> SOCKS5 ::1:<port> (127.0.0.1 fallback) -> mux-tunnelClient core -> CDN -> mux-tunnelServer
           \_______________ Packet Tunnel extension (MuxTunnelExtension) ______________/
 ```
 

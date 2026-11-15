@@ -5,6 +5,9 @@ tunnel" on a real iPhone. Read this **before** writing the real VPN app. It list
 failed and why, what to do, what not to do, and what is still unknown.
 
 Verified on: iPhone 6s, iOS 15, installed with TrollStore (no paid Apple Developer account), LTE and Wi-Fi.
+Last on-device check: build `m` (hev connects to the core over `::1`, real flows such as `bag.itunes.apple.com:443`
+reach the core, 2 MB memory, 1 tunnel). Build `n` (VPN announced only after the mux tunnel is up) is pushed but not yet
+checked on the device.
 Not verified: any other device or iOS version, long running behavior, battery, throughput, network
 changes (Wi-Fi <-> LTE), sleep/wake, memory under load. Treat those as open work.
 
@@ -14,7 +17,7 @@ changes (Wi-Fi <-> LTE), sleep/wake, memory under load. Treat those as open work
 
 ```
  apps ──► utun (system) ──► hev-socks5-tunnel (tun2socks, in the extension)
-                                   │  SOCKS5 over 127.0.0.1:<random port>
+                                   │  SOCKS5 over ::1:<random port> (127.0.0.1 as fallback)
                                    ▼
                         netRectorClient core (mux-tunnelClient)  ──► CDN / server  (real network)
 ```
@@ -27,7 +30,7 @@ changes (Wi-Fi <-> LTE), sleep/wake, memory under load. Treat those as open work
 - **hev-socks5-tunnel** reads IP packets from the utun file descriptor, terminates TCP in user space
   (lwIP), and opens one SOCKS5 connection per TCP flow to the local core. DNS is answered by hev itself
   (mapped DNS, `198.18.0.2`), so apps connect by domain through the tunnel.
-- **Core**: SOCKS5 listener, N mux tunnels to the server (websocket-style handshake first), round-robin.
+- **Core**: SOCKS5 listener on **both loopbacks** (`LoopbackListener`: 127.0.0.1 and ::1, one port), N mux tunnels to the server (websocket-style handshake first), round-robin.
 - TCP only. UDP is not carried by the mux (section 7).
 
 Code map: `Shared/` (types used by both processes), `Extension/` (provider, engines, diagnostics),
@@ -85,6 +88,7 @@ Each of these cost hours. Do them right the first time.
   extension asks the tunnel's DNS, which answers with mapped addresses that lead back into the tunnel.
   Pass the resolved **IP** to the core for its whole life. Re-resolve on the next start.
 - **Start the core after the settings are applied**, so its first connect already sees the final routes.
+- **Do not announce the VPN before the mux tunnel is up** (3.8).
 - If the physical network has **no route to the server**, the connect falls through to the default route
   (the tunnel) and you get the same endless loop, plus `ENETUNREACH` on a probe before the VPN. Seen with a
   CDN IP that was not reachable from that ISP/Wi-Fi. A reachability probe before bringing the VPN up should
@@ -104,6 +108,11 @@ Each of these cost hours. Do them right the first time.
   verified to work in the extension (probe: connected in 0 ms), so hev needs no patch for it. The patch stays as the
   fallback: if `::1` cannot be bound, the engine gets `127.0.0.1` and the patched `AF_INET` path.
 
+- Verified in the build `m` log: `the engine connects to ::1`, hev `socks5 client connect [::1]:<port>`, flows reach the
+  core; the probe `::ffff:127.0.0.1` still fails with error 49 (so the IPv4-mapped form really is the iOS problem).
+  The patch code path is not used when the address is `::1`; it is only the fallback.
+- `socks5 client res.rep 7` in the hev log is expected: hev asks for UDP ASSOCIATE and the core refuses it (section 7).
+
 ### 3.5 Quick start/stop shows a false error
 - `saveToPreferences` makes the system post `.disconnected` **before** `.connecting`. Treating "disconnected while
   starting" as a failure produced a red "stopped right after starting" on every successful start.
@@ -118,7 +127,15 @@ Each of these cost hours. Do them right the first time.
 - hev appends. `HevConfigurationBuilder.writeFile` deletes the file on every start; `HevLogReader` forwards new lines
   to the diagnostic log as `hev: ...`. `log-level: debug` is for diagnostic builds only (very chatty).
 
-### 3.8 Smaller ones
+### 3.8 First connections rejected right after start ("no tunnel available")
+- The VPN used to be announced as soon as the settings were applied. Apps and hev opened connections within 20 ms,
+  before the mux tunnel was established (~0.3 s); the core answered `no tunnel available, rejecting connection`
+  (hev: `res.rep 1`). Harmless (apps retry) but ugly, and the status said "connected" too early.
+- **Fix (build `n`):** after the settings and the core start, `waitForMuxTunnel` polls `connectedTunnels` (50 ms, 15 s
+  limit); only then hev starts and `completionHandler(nil)` is called. On timeout the start fails with
+  `The server did not answer in time`, if the core stops meanwhile with `The mux client stopped`.
+
+### 3.9 Smaller ones
 - Swift: `strdup` in a `.map` needs an explicit closure type (`(String) -> UnsafeMutablePointer<CChar>`).
 - hev's nested submodule: `git submodule update --init --recursive` (`src/core`, `third-part/*`). The CI checkout uses `submodules: recursive`.
 - Android parity: Android excludes the app itself (`addDisallowedApplication`); **iOS cannot** (per-app VPN needs MDM).
@@ -136,7 +153,7 @@ Each of these cost hours. Do them right the first time.
 - Test on a real device; the simulator cannot run Network Extensions.
 - Keep both processes' entitlements identical in the files and in the signed binaries (`ldid -e`).
 - Pin hev; keep the patch next to it and re-apply on update.
-- Start order (build `n`+): apply the network settings, start the mux core, **wait until a mux tunnel is connected**
+- Start order (build `n`+): resolve the server, apply the network settings (server excluded), start the mux core, **wait until a mux tunnel is connected**
   (15 s limit, then an error), and only then start hev and call `completionHandler(nil)`. The VPN indicator therefore
   appears when the tunnel really works, and no early connection hits "no tunnel available".
 
@@ -160,15 +177,17 @@ Healthy start looks like this (build stamp first, then in this order):
 ```
 startTunnel, build <stamp>
 server <host> -> <ip>:<port>, tunnels N
-socks5 listener 127.0.0.1:<port>
-network settings applied, server <ip> excluded from the routes
-utun descriptor 5
-tunnel running
-core: connecting tunnel 0 to <ip>:<port>
+socks5 listener port <port>, the engine connects to ::1
 probe[before vpn] ... connected in ~100 ms, local address <wifi/lte address>   <- NOT 198.18.0.1
+network settings applied, server <ip> excluded from the routes
+core: connecting tunnel 0 to <ip>:<port>
+core: SOCKS5 on port <port> (IPv4 loopback: yes, IPv6 loopback: yes), ...
 probe[after vpn]  ... connected, local address <wifi/lte address>
 core: TCP connected ..., sending the handshake
 core: tunnel established with <ip>:<port>
+mux tunnel is up, starting the engine
+utun descriptor 5
+tunnel running
 tick tunnels 1/1 utun->engine ..p engine->utun ..p mem ..MB                    <- every 3 s
 hev: ... socks5 client tcp -> [host]:443 ... socks5 client connect server fd N   <- real flows
 ```
@@ -183,6 +202,8 @@ How to read it:
 | `closed while waiting for the handshake response (error 54)` | server/CDN closes during the websocket-style handshake: check Host/path/key/accept |
 | `utun->engine` grows, no `stream opened` in core, hev `socks5 client connect` without `server fd` | hev cannot reach the SOCKS5 listener (section 3.4) |
 | `utun->engine` does not grow while using apps | traffic does not enter the tunnel: routes/DNS |
+| `start failed: The server did not answer in time` | no mux tunnel within 15 s: server/CDN unreachable or handshake rejected |
+| `res.rep 7` in the hev log | normal: the core refuses UDP ASSOCIATE |
 | `extension does not answer status requests` | provider messages do not work on this install; the UDP channel still does |
 
 ---
@@ -199,6 +220,14 @@ How to read it:
 - Tunnel interface: IPv4 `198.18.0.1/32`, IPv6 `fc00::1/128`, DNS `198.18.0.2` (answered by hev), mapped network
   `100.64.0.0/10`, MTU 1500.
 - Tunnel count 1-16 (default 1), round-robin per SOCKS5 stream. Mux: 32 KB frames, 256 KB window.
+- **Battery (not measured, reasoning only).** Idle cost comes from waking the CPU and the radio, not from the number
+  of open sockets. Each tunnel sends a mux ping every `keepAliveSeconds` (30 s); with N tunnels that is up to N radio
+  wake-ups per 30 s instead of 1, so 8 permanent tunnels cost clearly more than 1. Other idle wake-ups: the core loop
+  runs in slices of at most `MaxLoopSliceMs` = 1000 ms (a wake-up per second even with no traffic), hev has its own
+  timer task, and the diagnostic stats timer ticks every second (dev only). Under load the tunnel count barely
+  matters: the same bytes use the radio either way. Ideas: keep 1-2 tunnels and open more only when streams pile up,
+  line the pings of all tunnels up (or ping only one), raise the loop slice and keep-alive when the screen is off,
+  remove the 1 s stats timer in release. Measure with Xcode Energy / Instruments before deciding.
 
 ---
 
