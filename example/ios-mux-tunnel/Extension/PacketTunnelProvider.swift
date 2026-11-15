@@ -85,7 +85,9 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                 for delay in [1.0, 8.0] {
                     DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
                         ConnectivityProbe.run(label: "socks5 listener after \(Int(delay)) s", address: DefaultTunnelSettings.socksAddress, port: socksPort)
-                        ConnectivityProbe.runLoopbackLikeEngine(label: "like the engine, after \(Int(delay)) s", port: socksPort)
+                        // the engine's own way (IPv4-mapped, needs the hev patch) and the native IPv6 loopback
+                        ConnectivityProbe.runLoopbackLikeEngine(label: "engine style after \(Int(delay)) s", address: "::ffff:127.0.0.1", port: socksPort)
+                        ConnectivityProbe.runLoopbackLikeEngine(label: "IPv6 loopback after \(Int(delay)) s", address: "::1", port: socksPort)
                     }
                 }
                 self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)

@@ -31,6 +31,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Library tests (the macOS runner has an IPv6 loopback, the Linux sandbox has not)
+        working-directory: .
+        run: |
+          cmake -S . -B build-tests -DNETRECTOR_ENABLE_TLS=OFF -DNETRECTOR_BUILD_EXAMPLES=OFF -DNETRECTOR_BUILD_TESTS=ON
+          cmake --build build-tests -j 4
+          ./build-tests/tests/netRectorClientTests tests
+
       - name: Install XcodeGen
         run: brew install xcodegen
 

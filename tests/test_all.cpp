@@ -68,6 +68,56 @@ static void testTcp()
     l.stop();
 }
 
+static bool ipv6LoopbackAvailable()
+{
+    NrSocket fd = platform::createSocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+    if (fd == NR_INVALID_SOCKET) return false;
+    sockaddr_in6 a; memset(&a, 0, sizeof(a));
+    a.sin6_family = AF_INET6; a.sin6_addr = in6addr_loopback;
+    bool ok = ::bind(fd, reinterpret_cast<sockaddr*>(&a), sizeof(a)) == 0;
+    platform::closeSocket(fd);
+    return ok;
+}
+
+static void testLoopbackListener()
+{
+    printf("[tcp] loopback listener: IPv4 + IPv6 on one port\n");
+    EventLoop loop;
+    LoopbackListener l(&loop);
+    CHECK(l.start(0, makeEcho, nullptr));
+    CHECK(l.port() > 0);
+    CHECK(l.ipv4Active());
+    const bool hasV6 = ipv6LoopbackAvailable();
+    CHECK(l.ipv6Active() == hasV6);        // IPv6 only where the system has it
+    if (!hasV6) printf("  (no IPv6 loopback on this system: IPv6 half skipped)\n");
+
+    ClientSocket* c4 = new ClientSocket; c4->setAutoDelete(false); c4->setReactor(&loop);
+    CHECK(c4->connectTo("127.0.0.1", (uint16_t)l.port()));
+    CHECK(pump(loop, [&]{ return c4->connected; }));
+    c4->send("v4", 2);
+    CHECK(pump(loop, [&]{ return c4->got == "v4"; }));
+    c4->close(false);
+    CHECK(pump(loop, [&]{ return c4->closed; }));
+    delete c4;
+
+    if (hasV6) {
+        ClientSocket* c6 = new ClientSocket; c6->setAutoDelete(false); c6->setReactor(&loop);
+        CHECK(c6->connectTo("::1", (uint16_t)l.port()));
+        CHECK(pump(loop, [&]{ return c6->connected; }));
+        c6->send("v6", 2);
+        CHECK(pump(loop, [&]{ return c6->got == "v6"; }));
+        c6->close(false);
+        CHECK(pump(loop, [&]{ return c6->closed; }));
+        delete c6;
+    }
+
+    // a second listener on the same fixed port must fail (both families taken)
+    LoopbackListener second(&loop);
+    CHECK(!second.start(l.port(), makeEcho, nullptr));
+    l.stop();
+    CHECK(!l.ipv4Active() && !l.ipv6Active());
+}
+
 static void testConnectFailed()
 {
     printf("[tcp] connect refused + DNS failure\n");
@@ -241,6 +291,7 @@ int main(int argc, char** argv)
     std::string dir = argc > 1 ? argv[1] : ".";
     testLoopPost();
     testTcp();
+    testLoopbackListener();
     testConnectFailed();
     testDnsLocalhost();
     testUdp();

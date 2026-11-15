@@ -7,11 +7,21 @@
 
 #include "clsEventLoop.h"
 #include "clsListener.h"
+#include "clsLoopbackListener.h"
 #include "clsLog.h"
 
 #include <algorithm>
 
 using namespace netrector;
+
+namespace {
+
+bool isLoopbackAddress(const std::string& address)
+{
+    return address == "127.0.0.1" || address == "::1" || address == "localhost";
+}
+
+} // namespace
 
 ClientApplication::ClientApplication(const ClientConfig& config)
     : m_config(config)
@@ -55,9 +65,17 @@ int ClientApplication::run(bool handleSignals)
     pool = std::make_unique<TunnelPool>(loop, m_config, m_handshake, static_cast<size_t>(m_config.tunnelCount));
     loop.setUserData(pool.get());
 
+    // A loopback address means "only this device": listen on IPv4 and IPv6 loopback together, so
+    // a SOCKS5 client may connect to either (hev-socks5-tunnel on iOS prefers IPv6).
+    const bool loopbackOnly = isLoopbackAddress(m_config.listenAddress);
     Listener listener;
+    LoopbackListener loopbackListener;
     listener.setReactor(&loop);
-    if (!listener.start(m_config.listenPort, m_config.listenAddress.c_str(), &ClientApplication::createLocalConnection, this)) {
+    loopbackListener.setReactor(&loop);
+    const bool listening = loopbackOnly
+        ? loopbackListener.start(m_config.listenPort, &ClientApplication::createLocalConnection, this)
+        : listener.start(m_config.listenPort, m_config.listenAddress.c_str(), &ClientApplication::createLocalConnection, this);
+    if (!listening) {
         NR_LOG(LOG_ERROR, "[client] cannot listen on %s:%u", m_config.listenAddress.c_str(), m_config.listenPort);
         std::lock_guard<std::mutex> lock(m_loopMutex);
         m_loop = nullptr;
@@ -66,9 +84,16 @@ int ClientApplication::run(bool handleSignals)
 
     pool->start();
 
-    NR_LOG(LOG_INFO, "[client] SOCKS5 on %s:%u, %d tunnel(s) to %s:%u",
-           m_config.listenAddress.c_str(), m_config.listenPort, m_config.tunnelCount,
-           m_config.cdnAddress.c_str(), m_config.cdnPort);
+    if (loopbackOnly) {
+        NR_LOG(LOG_INFO, "[client] SOCKS5 on port %d (IPv4 loopback: %s, IPv6 loopback: %s), %d tunnel(s) to %s:%u",
+               loopbackListener.port(), loopbackListener.ipv4Active() ? "yes" : "no",
+               loopbackListener.ipv6Active() ? "yes" : "no", m_config.tunnelCount,
+               m_config.cdnAddress.c_str(), m_config.cdnPort);
+    } else {
+        NR_LOG(LOG_INFO, "[client] SOCKS5 on %s:%u, %d tunnel(s) to %s:%u",
+               m_config.listenAddress.c_str(), m_config.listenPort, m_config.tunnelCount,
+               m_config.cdnAddress.c_str(), m_config.cdnPort);
+    }
 
     // netRectorClient has no timers: the application drives the loop in short slices and runs its
     // own periodic work (tunnel reconnects) after each one.
@@ -92,6 +117,7 @@ int ClientApplication::run(bool handleSignals)
     pool->stop();       // no reconnects while the sockets are closed
     m_connectedTunnels = 0;
     listener.stop();
+    loopbackListener.stop();
     {
         std::lock_guard<std::mutex> lock(m_loopMutex);
         m_loop = nullptr;       // after this requestStop() no longer touches the loop

@@ -71,13 +71,13 @@ enum ConnectivityProbe {
 
     /// hev creates an IPv6 socket (IPV6_V6ONLY off) and connects to the IPv4-mapped address of the
     /// SOCKS5 listener. This does exactly that and reports errno, plus the file descriptor budget.
-    static func runLoopbackLikeEngine(label: String, port: UInt16) {
+    static func runLoopbackLikeEngine(label: String, address: String, port: UInt16) {
         DispatchQueue.global().async {
-            DiagnosticLog.shared.add("probe[\(label)] v6 socket -> ::ffff:127.0.0.1:\(port): \(connectMapped(port: port)); \(descriptorBudget())")
+            DiagnosticLog.shared.add("probe[\(label)] v6 socket -> \(address):\(port): \(connectIPv6(address: address, port: port)); \(descriptorBudget())")
         }
     }
 
-    private static func connectMapped(port: UInt16) -> String {
+    private static func connectIPv6(address: String, port: UInt16) -> String {
         let descriptor = socket(AF_INET6, SOCK_STREAM, 0)
         guard descriptor >= 0 else {
             return "socket() failed: \(String(cString: strerror(errno)))"
@@ -92,7 +92,7 @@ enum ConnectivityProbe {
         target.sin6_len = UInt8(MemoryLayout<sockaddr_in6>.size)
         target.sin6_family = sa_family_t(AF_INET6)
         target.sin6_port = port.bigEndian
-        inet_pton(AF_INET6, "::ffff:127.0.0.1", &target.sin6_addr)
+        inet_pton(AF_INET6, address, &target.sin6_addr)
 
         let result = withUnsafePointer(to: &target) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {

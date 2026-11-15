@@ -3,6 +3,7 @@
 // netRectorClient: single include for applications
 #include "clsEventLoop.h"
 #include "clsListener.h"
+#include "clsLoopbackListener.h"
 #include "clsLog.h"
 #include "clsMultiplexedTunnel.h"
 #include "clsPlatform.h"
