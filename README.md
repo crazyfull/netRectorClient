@@ -65,3 +65,7 @@ with a status bar that shows how many tunnels are connected; manual GitHub Actio
 Validated on Linux (functional tests, ASan/UBSan, interop with netRector's mux-tunnelServer).
 Cross-compile checked for Windows (MinGW) and macOS (arm64). Android/iOS builds and Windows runtime
 are not yet tested on real targets.
+
+## iOS
+
+`example/ios-mux-tunnel` is a working Packet Tunnel VPN test app. **Read [docs/ios-network-extension-guide.md](docs/ios-network-extension-guide.md) before building a real iOS VPN on the library**: it lists what was verified on a device, the problems met (routes, DNS, hev/IPv4-mapped sockets, no error reasons below iOS 16), and what to do and not to do.

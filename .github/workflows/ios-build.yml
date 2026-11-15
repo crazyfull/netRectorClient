@@ -1,12 +1,9 @@
-name: iOS IPA (unsigned)
+name: iOS IPA (TrollStore)
 
-# Manual build of the iOS app (example/ios-mux-tunnel). Two IPAs are produced:
-#   MuxTunnel-trollstore.ipa  entitlements fake-signed in: install it with TrollStore (no developer account).
-#   MuxTunnel-unsigned.ipa    NOT signed: a VPN (Network
-# Extension) app needs your own Apple Developer provisioning profiles, so sign it afterwards with
-# your own tool (Xcode, fastlane, Sideloadly, ...) using profiles that include the
-# "Network Extensions" capability for both bundle ids:
-#   io.github.crazyfull.muxtunnel and io.github.crazyfull.muxtunnel.tunnel
+# Manual build of the iOS app (example/ios-mux-tunnel). The result is ONE file, not zipped:
+#   MuxTunnel-trollstore.ipa   entitlements fake-signed in: open it with TrollStore (no Apple Developer account).
+# A build for a real signing identity (TestFlight, App Store) needs your own provisioning profiles
+# with the "Network Extensions" capability for both bundle ids; see docs/ios-network-extension-guide.md.
 on:
   workflow_dispatch:
     inputs:
@@ -54,13 +51,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build
 
-      - name: Package the unsigned IPA
-        run: |
-          rm -rf build/ipa && mkdir -p build/ipa/Payload
-          cp -R build/derived/Build/Products/Release-iphoneos/MuxTunnel.app build/ipa/Payload/
-          (cd build/ipa && zip -qry "$GITHUB_WORKSPACE/MuxTunnel-unsigned.ipa" Payload)
-          ls -l "$GITHUB_WORKSPACE/MuxTunnel-unsigned.ipa"
-
       - name: Package the TrollStore IPA
         run: |
           # TrollStore installs apps with any entitlements and needs no Apple Developer account, but
@@ -76,13 +66,12 @@ jobs:
           (cd build/trollstore && zip -qry "$GITHUB_WORKSPACE/MuxTunnel-trollstore.ipa" Payload)
           ls -l "$GITHUB_WORKSPACE/MuxTunnel-trollstore.ipa"
 
-      - name: Upload the IPAs
-        uses: actions/upload-artifact@v4
+      - name: Upload the IPA (not zipped)
+        uses: actions/upload-artifact@v7
         with:
-          name: mux-tunnel-ios-ipas
-          path: |
-            MuxTunnel-unsigned.ipa
-            MuxTunnel-trollstore.ipa
+          name: MuxTunnel-trollstore.ipa
+          path: MuxTunnel-trollstore.ipa
+          archive: false
           if-no-files-found: error
 
       - name: Publish a release
@@ -90,7 +79,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag }}
-          name: Mux Tunnel (iOS, unsigned) ${{ inputs.release_tag }}
-          files: |
-            MuxTunnel-unsigned.ipa
-            MuxTunnel-trollstore.ipa
+          name: Mux Tunnel (iOS, TrollStore) ${{ inputs.release_tag }}
+          files: MuxTunnel-trollstore.ipa

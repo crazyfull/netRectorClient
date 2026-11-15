@@ -32,6 +32,9 @@ final class TunnelController {
 
     let diagnosticReceiver = DiagnosticReceiver()
     private var userRequestedStop = false
+    /// The system reported connecting / connected since the last start. Without it a "disconnected"
+    /// notification is only the system saving the VPN configuration, not a failure.
+    private var hasSeenConnection = false
     private var lastReplyWasOk: Bool?
 
     private let store = TunnelConfigurationStore()
@@ -80,6 +83,7 @@ final class TunnelController {
         failureLog = nil
         isCollectingFailureLog = false
         userRequestedStop = false
+        hasSeenConnection = false
         diagnosticReceiver.clear()
         do {
             try configuration.validate()
@@ -200,16 +204,19 @@ final class TunnelController {
 
         switch connection.status {
         case .connected:
+            hasSeenConnection = true
+            errorMessage = nil
             if status.state != .running {
                 status = TunnelStatus(state: .running, connectedTunnels: 0, totalTunnels: configuration.tunnelCount)
             }
             requestStatus()
         case .connecting, .reasserting:
+            hasSeenConnection = true
             status = TunnelStatus(state: .starting, connectedTunnels: 0, totalTunnels: configuration.tunnelCount)
         case .disconnecting, .disconnected, .invalid:
             let wasStarting = status.state == .starting || status.state == .running
             status = TunnelStatus.stopped
-            if wasStarting && !userRequestedStop {
+            if wasStarting && hasSeenConnection && !userRequestedStop {
                 if #available(iOS 16.0, *) {
                     readLastError(from: connection)
                 } else {

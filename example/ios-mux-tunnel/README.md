@@ -62,3 +62,5 @@ In Xcode set your **Team** for both targets. A VPN app needs the **Network Exten
   the connected-tunnel counter. The Swift code, the Xcode project and the iOS build could **not** be
   compiled in the authoring environment (no macOS / Xcode): expect to fix small compile errors on the
   first run of the workflow and send the log.
+
+Lessons, problems and the checklist for a real VPN app: [../../docs/ios-network-extension-guide.md](../../docs/ios-network-extension-guide.md).
