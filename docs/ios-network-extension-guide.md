@@ -136,6 +136,9 @@ Each of these cost hours. Do them right the first time.
 - Test on a real device; the simulator cannot run Network Extensions.
 - Keep both processes' entitlements identical in the files and in the signed binaries (`ldid -e`).
 - Pin hev; keep the patch next to it and re-apply on update.
+- Start order (build `n`+): apply the network settings, start the mux core, **wait until a mux tunnel is connected**
+  (15 s limit, then an error), and only then start hev and call `completionHandler(nil)`. The VPN indicator therefore
+  appears when the tunnel really works, and no early connection hits "no tunnel available".
 
 **Don't**
 - Don't assume the extension's own sockets bypass the tunnel. They do not.

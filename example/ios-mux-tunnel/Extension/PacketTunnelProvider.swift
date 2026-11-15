@@ -92,7 +92,21 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                         ConnectivityProbe.runLoopbackLikeEngine(label: "IPv6 loopback after \(Int(delay)) s", address: "::1", port: socksPort)
                     }
                 }
-                self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)
+                // The VPN is announced (completionHandler) and the engine started only when the mux tunnel
+                // is up; otherwise the first connections would be rejected ("no tunnel available")
+                self.waitForMuxTunnel { [weak self] error in
+                    guard let self = self else {
+                        return
+                    }
+                    if let error = error {
+                        DiagnosticLog.shared.add("start failed: \(error.localizedDescription)")
+                        self.stopEngines()
+                        self.state = .failed
+                        completionHandler(error)
+                        return
+                    }
+                    self.startTunnelEngine(configurationPath: configurationPath, completionHandler: completionHandler)
+                }
             }
         } catch {
             DiagnosticLog.shared.add("start failed: \(error.localizedDescription)")
@@ -133,6 +147,30 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             throw TunnelProviderError.missingConfiguration
         }
         return try TunnelConfiguration.decoded(from: data)
+    }
+
+    /// Waits until the mux client has a connected tunnel. Ends with an error when the client stops
+    /// or the server does not answer in time.
+    private func waitForMuxTunnel(timeout: TimeInterval = 15, completion: @escaping (Error?) -> Void) {
+        let deadline = Date().addingTimeInterval(timeout)
+        DispatchQueue.global().async { [weak self] in
+            while let self = self {
+                if self.muxCore.connectedTunnels > 0 {
+                    DiagnosticLog.shared.add("mux tunnel is up, starting the engine")
+                    completion(nil)
+                    return
+                }
+                if self.state == .failed {
+                    completion(TunnelProviderError.muxClientStopped(code: -1))
+                    return
+                }
+                if Date() >= deadline {
+                    completion(TunnelProviderError.serverNotAnswering)
+                    return
+                }
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+        }
     }
 
     private func startTunnelEngine(configurationPath: String, completionHandler: @escaping (Error?) -> Void) {

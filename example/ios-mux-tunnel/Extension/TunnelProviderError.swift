@@ -8,6 +8,7 @@ enum TunnelProviderError: LocalizedError {
     case tunnelEngineFailed
     case cannotResolveServer(host: String)
     case muxClientStopped(code: Int32)
+    case serverNotAnswering
 
     var errorDescription: String? {
         switch self {
@@ -23,6 +24,8 @@ enum TunnelProviderError: LocalizedError {
             return "Cannot resolve the server address \(host)."
         case .muxClientStopped(let code):
             return "The mux client stopped unexpectedly (code \(code))."
+        case .serverNotAnswering:
+            return "The server did not answer in time."
         }
     }
 }
