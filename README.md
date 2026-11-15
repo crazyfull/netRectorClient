@@ -19,6 +19,13 @@ application can switch between the two libraries by changing the include path an
 
 `EventLoop::post()`, `wake()` and `stop()` are thread-safe; everything else belongs to the loop thread.
 
+## TLS
+
+`TLSContext::createClient(verifyPeer, caFile)` (no certificate or key needed; `verifyPeer=false`
+accepts any server certificate), `createClientFromPEM`, `createServer(certFile, keyFile)` and
+`createServerSelfSigned(commonName)`, which generates an ECDSA P-256 self-signed certificate in
+memory (valid 10 years, CN and subjectAltName = `commonName`). TLS needs BoringSSL at build time.
+
 ## Build
 
 ```sh

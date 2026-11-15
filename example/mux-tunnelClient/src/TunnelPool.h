@@ -7,9 +7,11 @@
 
 #include "clsEventLoop.h"
 #include "clsMultiplexedTunnel.h"
+#include "clsTLSContext.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 class ClientTunnel;
@@ -21,7 +23,8 @@ class ClientTunnel;
 class TunnelPool {
 public:
     TunnelPool(netrector::EventLoop& loop, const ClientConfig& config,
-               const WebSocketClientHandshake& handshake, size_t tunnelCount);
+               const WebSocketClientHandshake& handshake, size_t tunnelCount,
+               netrector::TLSContext* tlsContext = nullptr);
 
     // Reactor thread: starts connecting all tunnels.
     void start();
@@ -58,6 +61,8 @@ private:
     netrector::EventLoop& m_loop;
     const ClientConfig& m_config;
     const WebSocketClientHandshake& m_handshake;
+    netrector::TLSContext* m_tlsContext;    // nullptr = plain TCP
+    std::string m_serverName;               // SNI
     std::vector<TunnelSlot> m_slots;
     size_t m_nextSlot = 0;                  // round-robin cursor
     bool m_stopped = false;

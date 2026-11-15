@@ -9,6 +9,7 @@
 #include "clsListener.h"
 #include "clsLoopbackListener.h"
 #include "clsLog.h"
+#include "clsTLSContext.h"
 
 #include <algorithm>
 
@@ -55,6 +56,20 @@ int ClientApplication::run(bool handleSignals)
     // back into the pool.
     std::unique_ptr<TunnelPool> pool;
 
+    // TLS context shared by all tunnels; it must outlive every socket, so it is declared before the loop too.
+    std::unique_ptr<TLSContext> tlsContext;
+    if (m_config.useTls) {
+        std::string error;
+        tlsContext.reset(TLSContext::createClient(m_config.tlsVerifyPeer,
+                                                  m_config.tlsCaFile.empty() ? nullptr : m_config.tlsCaFile.c_str(), &error));
+        if (!tlsContext) {
+            NR_LOG(LOG_ERROR, "[client] TLS is not available: %s", error.c_str());
+            return 1;
+        }
+        NR_LOG(LOG_INFO, "[client] TLS enabled, server certificate %s",
+               m_config.tlsVerifyPeer ? "is verified" : "is NOT verified");
+    }
+
     EventLoop loop;
     {
         std::lock_guard<std::mutex> lock(m_loopMutex);
@@ -62,7 +77,7 @@ int ClientApplication::run(bool handleSignals)
     }
     loop.setMaxConnections(static_cast<uint32_t>(maxConnections));
 
-    pool = std::make_unique<TunnelPool>(loop, m_config, m_handshake, static_cast<size_t>(m_config.tunnelCount));
+    pool = std::make_unique<TunnelPool>(loop, m_config, m_handshake, static_cast<size_t>(m_config.tunnelCount), tlsContext.get());
     loop.setUserData(pool.get());
 
     // A loopback address means "only this device": listen on IPv4 and IPv6 loopback together, so
