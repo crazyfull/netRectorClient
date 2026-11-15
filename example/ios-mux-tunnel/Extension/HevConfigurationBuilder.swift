@@ -2,7 +2,7 @@ import Foundation
 
 /// Builds the YAML configuration of hev-socks5-tunnel.
 enum HevConfigurationBuilder {
-    static func makeYaml(socksPort: UInt16, logPath: String) -> String {
+    static func makeYaml(socksPort: UInt16, socksAddress: String, logPath: String) -> String {
         // Small buffers: a Network Extension has a tight memory limit
         return """
         tunnel:
@@ -11,7 +11,7 @@ enum HevConfigurationBuilder {
           ipv6: '\(DefaultTunnelSettings.tunnelIPv6)'
         socks5:
           port: \(socksPort)
-          address: \(DefaultTunnelSettings.socksAddress)
+          address: '\(socksAddress)'
           udp: 'udp'
         mapdns:
           address: \(DefaultTunnelSettings.dnsAddress)
@@ -45,11 +45,11 @@ enum HevConfigurationBuilder {
     }
 
     /// Writes the configuration to a temporary file and returns its path.
-    static func writeFile(socksPort: UInt16) throws -> String {
+    static func writeFile(socksPort: UInt16, socksAddress: String) throws -> String {
         // The engine appends to its log file: start with an empty one
         try? FileManager.default.removeItem(atPath: logFilePath)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("hev-socks5-tunnel.yml")
-        try makeYaml(socksPort: socksPort, logPath: logFilePath).write(to: url, atomically: true, encoding: .utf8)
+        try makeYaml(socksPort: socksPort, socksAddress: socksAddress, logPath: logFilePath).write(to: url, atomically: true, encoding: .utf8)
         return url.path
     }
 }

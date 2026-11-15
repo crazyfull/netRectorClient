@@ -99,6 +99,10 @@ Each of these cost hours. Do them right the first time.
 - **Fix:** `patches/hev-core-ios-ipv4-socks.patch` (applied by `scripts/buildNativeCore.sh` to the nested
   `third_party/hev-socks5-tunnel/src/core`, idempotent): on Apple platforms an IPv4 SOCKS server gets an `AF_INET`
   socket. Re-check the patch whenever the hev submodule is updated.
+- **Preferred way (build `m`+):** netRectorClient's `LoopbackListener` listens on `127.0.0.1` **and** `::1` on one port,
+  and the extension points hev at `::1` (`LoopbackPortFinder.findEndpoint()`). A plain `AF_INET6` connect to `::1` is
+  verified to work in the extension (probe: connected in 0 ms), so hev needs no patch for it. The patch stays as the
+  fallback: if `::1` cannot be bound, the engine gets `127.0.0.1` and the patched `AF_INET` path.
 
 ### 3.5 Quick start/stop shows a false error
 - `saveToPreferences` makes the system post `.disconnected` **before** `.connecting`. Treating "disconnected while

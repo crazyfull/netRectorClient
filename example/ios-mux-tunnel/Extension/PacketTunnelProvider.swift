@@ -55,11 +55,13 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             ConnectivityProbe.run(label: "before vpn", address: address, port: UInt16(configuration.cdnPort))
             self.configuration = configuration
 
-            guard let socksPort = LoopbackPortFinder.findFreePort() else {
+            guard let endpoint = LoopbackPortFinder.findEndpoint() else {
                 throw TunnelProviderError.noFreePort
             }
-            let configurationPath = try HevConfigurationBuilder.writeFile(socksPort: socksPort)
-            DiagnosticLog.shared.add("socks5 listener 127.0.0.1:\(socksPort)")
+            let socksPort = endpoint.port
+            let engineAddress = endpoint.engineAddress
+            let configurationPath = try HevConfigurationBuilder.writeFile(socksPort: socksPort, socksAddress: engineAddress)
+            DiagnosticLog.shared.add("socks5 listener port \(socksPort), the engine connects to \(engineAddress)")
 
             setTunnelNetworkSettings(TunnelNetworkSettingsFactory.makeSettings(excludingServerAddress: address)) { [weak self] error in
                 guard let self = self else {

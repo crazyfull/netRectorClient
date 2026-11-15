@@ -4,7 +4,7 @@ import Foundation
 /// the user changes the editable ones in the app (saved by TunnelConfigurationStore).
 enum DefaultTunnelSettings {
     // Shown in the diagnostic log, to know which build is installed.
-    static let buildStamp = "2026-11-15 l"
+    static let buildStamp = "2026-11-15 m"
 
     // Placeholders: enter your own CDN / server in the app. IP or domain.
     static let cdnAddress = "irc.cdn.ir"
@@ -27,6 +27,10 @@ enum DefaultTunnelSettings {
 
     // Local SOCKS5 listener between the tun2socks engine and the mux client (loopback only).
     static let socksAddress = "127.0.0.1"
+
+    // The same listener on the IPv6 loopback. The engine prefers it: connecting to it is a plain
+    // IPv6 connect, which works inside a Network Extension (the IPv4-mapped form does not).
+    static let socksAddressIPv6 = "::1"
 
     // VPN interface (private addresses, they never leave the phone).
     static let tunnelRemoteAddress = "127.0.0.1"
