@@ -32,6 +32,12 @@ public:
     // certChainFile: PEM (leaf + intermediates), privateKeyFile: PEM
     static TLSContext* createServer(const char* certChainFile, const char* privateKeyFile, std::string* error = nullptr);
 
+    // Server whose certificate is generated on the spot: ECDSA P-256 key, self-signed certificate
+    // valid for 10 years, CN and subjectAltName = commonName (default "localhost"). Nothing is
+    // written to disk, a new key is created on every call. Clients must not verify it, or must be
+    // given this certificate some other way.
+    static TLSContext* createServerSelfSigned(const char* commonName = "localhost", std::string* error = nullptr);
+
     // verifyPeer=true: certificate and host name of the server are checked.
     // caFile=nullptr: system CA store (Linux, Android)
     static TLSContext* createClient(bool verifyPeer = true, const char* caFile = nullptr, std::string* error = nullptr);

@@ -34,6 +34,20 @@ Sec-WebSocket-Version: 13
 The request is built from `--host`, `--path`, `--ws-key` and any number of `--header` lines; the
 response must be `101` with the expected `Sec-WebSocket-Accept` (`--ws-accept ""` skips that check).
 
+## TLS (HTTPS)
+
+`--tls` wraps every tunnel in TLS; the websocket-style handshake request is then sent *inside* the
+TLS session (so a CDN sees ordinary HTTPS).
+
+* **No certificate or key is needed on the client.**
+* By default the server certificate is **not verified**: self-signed, expired or mismatching
+  certificates are accepted (this encrypts, but does not authenticate the server). Use
+  `--tls-verify` (system CAs; on iOS and Windows only with `--tls-ca`) or `--tls-ca FILE` (your own
+  CA / the server's certificate) to verify the chain and the host name.
+* `--sni NAME` sets the TLS server name (and the name checked when verifying); default: `--host`.
+* `mux-tunnelServer` (netRector) generates a self-signed certificate when it is started with
+  `--tls` and no `--tls-cert/--tls-key`.
+
 ## Build
 
 ```sh
@@ -47,8 +61,7 @@ cmake --build build -j
 * Android / iOS / Windows: build the library with the platform toolchain (see the top-level
   README); the application code is the same. On a phone, call the logic of `ClientApplication::run()`
   from your own thread instead of using the signal handler.
-* TLS: when the library was built with TLS, call `enableTLS()` in `TunnelPool::connectSlot()`
-  (marked there); the handshake request is sent after the TLS handshake.
+* TLS needs BoringSSL when building the library (see above); without it `--tls` is refused at start-up.
 
 ## Configuration
 
@@ -64,6 +77,9 @@ overridden at run time:
 | `--ws-key KEY` | `dGhlIHNhbXBsZSBub25jzQ==` | `Sec-WebSocket-Key` (must match the server) |
 | `--ws-accept VALUE` | `dGhlIHNhbXBsZSBub25jzQ=` | expected `Sec-WebSocket-Accept`, empty = no check |
 | `--header LINE` | - | extra request header, repeatable |
+| `--tls` | off | wrap the tunnels in TLS (no cert needed, no verification) |
+| `--tls-verify` / `--tls-ca FILE` | off | verify the server certificate (system CAs / given CA) |
+| `--sni NAME` | `--host` | TLS server name |
 | `--tunnels N` | 1 | number of mux tunnels, 1-16 |
 | `--keepalive SEC` | 30 | mux ping interval, 0 = off |
 | `--handshake-timeout SEC` | 10 | time allowed for connect + handshake |
