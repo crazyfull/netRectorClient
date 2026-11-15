@@ -1,8 +1,0 @@
-name: Darwin probe
-on: workflow_dispatch
-jobs:
-  probe:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: clang -o probe tests/darwin/v4MappedProbe.c && ./probe

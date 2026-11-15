@@ -66,4 +66,63 @@ enum ConnectivityProbe {
         inet_ntop(AF_INET, &local.sin_addr, &buffer, socklen_t(buffer.count))
         return String(cString: buffer)
     }
+
+    // MARK: - Loopback SOCKS5 listener, the way hev-socks5-tunnel connects to it
+
+    /// hev creates an IPv6 socket (IPV6_V6ONLY off) and connects to the IPv4-mapped address of the
+    /// SOCKS5 listener. This does exactly that and reports errno, plus the file descriptor budget.
+    static func runLoopbackLikeEngine(label: String, port: UInt16) {
+        DispatchQueue.global().async {
+            DiagnosticLog.shared.add("probe[\(label)] v6 socket -> ::ffff:127.0.0.1:\(port): \(connectMapped(port: port)); \(descriptorBudget())")
+        }
+    }
+
+    private static func connectMapped(port: UInt16) -> String {
+        let descriptor = socket(AF_INET6, SOCK_STREAM, 0)
+        guard descriptor >= 0 else {
+            return "socket() failed: \(String(cString: strerror(errno)))"
+        }
+        defer { close(descriptor) }
+
+        var off: Int32 = 0
+        setsockopt(descriptor, IPPROTO_IPV6, IPV6_V6ONLY, &off, socklen_t(MemoryLayout<Int32>.size))
+        _ = fcntl(descriptor, F_SETFL, fcntl(descriptor, F_GETFL) | O_NONBLOCK)
+
+        var target = sockaddr_in6()
+        target.sin6_len = UInt8(MemoryLayout<sockaddr_in6>.size)
+        target.sin6_family = sa_family_t(AF_INET6)
+        target.sin6_port = port.bigEndian
+        inet_pton(AF_INET6, "::ffff:127.0.0.1", &target.sin6_addr)
+
+        let result = withUnsafePointer(to: &target) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                Darwin.connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in6>.size))
+            }
+        }
+        if result == 0 {
+            return "connected"
+        }
+        if errno != EINPROGRESS {
+            return "connect error \(errno): \(String(cString: strerror(errno)))"
+        }
+
+        var pollDescriptor = pollfd(fd: descriptor, events: Int16(POLLOUT), revents: 0)
+        guard poll(&pollDescriptor, 1, 3000) > 0 else {
+            return "timeout"
+        }
+        var socketError: Int32 = 0
+        var length = socklen_t(MemoryLayout<Int32>.size)
+        getsockopt(descriptor, SOL_SOCKET, SO_ERROR, &socketError, &length)
+        return socketError == 0 ? "connected" : "failed \(socketError): \(String(cString: strerror(socketError)))"
+    }
+
+    private static func descriptorBudget() -> String {
+        var limit = rlimit()
+        getrlimit(RLIMIT_NOFILE, &limit)
+        var open = 0
+        for descriptor in 0..<Int32(min(limit.rlim_cur, 4096)) where fcntl(descriptor, F_GETFD) != -1 {
+            open += 1
+        }
+        return "open descriptors \(open) of \(limit.rlim_cur)"
+    }
 }
