@@ -17,6 +17,20 @@ if [ ! -f "$HEV_DIR/Makefile" ]; then
     exit 1
 fi
 
+# hev-socks5-tunnel connects to its SOCKS5 server through an IPv4-mapped IPv6 address, which fails
+# inside a Network Extension (EADDRNOTAVAIL). The patch makes it use an IPv4 socket on Apple platforms.
+applyHevPatches() {
+    local patchFile="$PROJECT_DIR/patches/hev-core-ios-ipv4-socks.patch"
+    local coreDir="$HEV_DIR/src/core"
+    if git -C "$coreDir" apply --reverse --check "$patchFile" >/dev/null 2>&1; then
+        echo "== hev-socks5-core patch: already applied"
+    else
+        git -C "$coreDir" apply "$patchFile"
+        echo "== hev-socks5-core patch: applied"
+    fi
+}
+applyHevPatches
+
 # buildSlice <sdk> <arch>  ->  $WORK_DIR/slices/<sdk>-<arch>/libMuxTunnelCore.a
 buildSlice() {
     local sdk="$1" arch="$2"

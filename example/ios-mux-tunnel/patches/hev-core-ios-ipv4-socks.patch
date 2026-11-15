@@ -1,0 +1,61 @@
+diff --git a/src/hev-socks5-client.c b/src/hev-socks5-client.c
+index 68a30d1..4c76c56 100644
+--- a/src/hev-socks5-client.c
++++ b/src/hev-socks5-client.c
+@@ -275,6 +275,10 @@ hev_socks5_client_connect (HevSocks5Client *self, const char *addr, int port)
+     HevSocks5Class *klass;
+     struct sockaddr_in6 saddr;
+     struct sockaddr *sap;
++    socklen_t salen = sizeof (saddr);
++#if defined(__APPLE__)
++    struct sockaddr_in saddr4;
++#endif
+     int addr_family;
+     int timeout;
+     int fd, res;
+@@ -292,13 +296,33 @@ hev_socks5_client_connect (HevSocks5Client *self, const char *addr, int port)
+         return -1;
+     }
+ 
+-    fd = hev_socks5_socket (SOCK_STREAM);
++    sap = (struct sockaddr *)&saddr;
++#if defined(__APPLE__)
++    /* iOS: an AF_INET6 socket cannot connect to an IPv4-mapped address inside a
++     * Network Extension (EADDRNOTAVAIL), so IPv4 servers get an AF_INET socket. */
++    if (addr_family == HEV_SOCKS5_ADDR_FAMILY_IPV4) {
++        memset (&saddr4, 0, sizeof (saddr4));
++        saddr4.sin_len = sizeof (saddr4);
++        saddr4.sin_family = AF_INET;
++        saddr4.sin_port = saddr.sin6_port;
++        memcpy (&saddr4.sin_addr, &saddr.sin6_addr.s6_addr[12], 4);
++        sap = (struct sockaddr *)&saddr4;
++        salen = sizeof (saddr4);
++
++        fd = hev_task_io_socket_socket (AF_INET, SOCK_STREAM, 0);
++        if (fd >= 0) {
++            res = hev_task_add_fd (hev_task_self (), fd, POLLIN | POLLOUT);
++            if (res < 0)
++                hev_task_mod_fd (hev_task_self (), fd, POLLIN | POLLOUT);
++        }
++    } else
++#endif
++        fd = hev_socks5_socket (SOCK_STREAM);
+     if (fd < 0) {
+         LOG_E ("%p socks5 client socket", self);
+         return -1;
+     }
+ 
+-    sap = (struct sockaddr *)&saddr;
+     klass = HEV_OBJECT_GET_CLASS (self);
+     res = klass->binder (HEV_SOCKS5 (self), fd, sap);
+     if (res < 0) {
+@@ -308,8 +332,7 @@ hev_socks5_client_connect (HevSocks5Client *self, const char *addr, int port)
+         return -1;
+     }
+ 
+-    res = hev_task_io_socket_connect (fd, sap, sizeof (saddr), task_io_yielder,
+-                                      self);
++    res = hev_task_io_socket_connect (fd, sap, salen, task_io_yielder, self);
+     if (res < 0) {
+         LOG_I ("%p socks5 client connect", self);
+         hev_task_del_fd (hev_task_self (), fd);
