@@ -123,7 +123,7 @@ public:
 
     // ---- TLS (BoringSSL) ----
     // call before connectTo() or inside the accept callback.
-    // serverName (optional, client): SNI and certificate name; default: the host of connectTo
+    // serverName (optional, client): SNI and certificate name; nullptr = host of connectTo, "" = no SNI
     bool enableTLS(TLSContext* ctx, const char* serverName = nullptr);
     bool isTLS() const;
     TLSContext* tlsContext() const { return m_tlsCtx; }
@@ -261,6 +261,7 @@ private:
     struct ConnectInfo {
         std::string host;
         std::string serverName;
+        bool serverNameSet { false };
         std::vector<std::string> addrs;     // DNS answers (up to 8)
         size_t nextAddr { 0 };
     };

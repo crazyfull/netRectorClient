@@ -44,7 +44,7 @@ TLS session (so a CDN sees ordinary HTTPS).
   certificates are accepted (this encrypts, but does not authenticate the server). Use
   `--tls-verify` (system CAs; on iOS and Windows only with `--tls-ca`) or `--tls-ca FILE` (your own
   CA / the server's certificate) to verify the chain and the host name.
-* `--sni NAME` sets the TLS server name (and the name checked when verifying); default: `--host`.
+* `--sni NAME` sets the TLS server name (and the name checked when verifying); default: `--host`; the CDN address (`--cdn`) is never used as the SNI. If both are empty no SNI is sent.
 * `mux-tunnelServer` (netRector) generates a self-signed certificate when it is started with
   `--tls` and no `--tls-cert/--tls-key`.
 

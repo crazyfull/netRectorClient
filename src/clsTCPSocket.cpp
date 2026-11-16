@@ -938,8 +938,10 @@ bool TCPSocket::enableTLS(TLSContext *ctx, const char *serverName)
 #endif
 
     m_tlsCtx = ctx;
-    if (serverName && *serverName)
+    if (serverName) {       // nullptr: default (host of connectTo); "": no SNI and no name check
         connInfo().serverName = serverName;
+        connInfo().serverNameSet = true;
+    }
     return true;
 }
 
@@ -994,7 +996,7 @@ bool TCPSocket::tlsStart(bool isServer)
 
         std::string name;
         if (m_connInfo)
-            name = m_connInfo->serverName.empty() ? m_connInfo->host : m_connInfo->serverName;
+            name = m_connInfo->serverNameSet ? m_connInfo->serverName : m_connInfo->host;
         if (!name.empty()) {
             unsigned char tmp[sizeof(in6_addr)];
             bool isIP = inet_pton(AF_INET, name.c_str(), tmp) == 1 || inet_pton(AF_INET6, name.c_str(), tmp) == 1;
