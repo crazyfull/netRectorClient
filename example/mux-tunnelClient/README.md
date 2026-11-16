@@ -52,6 +52,7 @@ TLS session (so a CDN sees ordinary HTTPS).
 
 ```sh
 cmake -S . -B build -DBORINGSSL_ROOT=/path/to/boringssl   # BoringSSL optional: without it TLS is off
+# custom layout: -DBORINGSSL_INCLUDE_DIR=<dir with openssl/ssl.h> -DBORINGSSL_LIB_DIR=<dir with libssl.a, libcrypto.a>
 cmake --build build -j
 # -> build/example/mux-tunnelClient/mux-tunnelClient
 ```
