@@ -24,6 +24,12 @@
             android:text="@string/button_start" />
 
         <Button
+            android:id="@+id/diagnostics_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/button_diagnostics" />
+
+        <Button
             android:id="@+id/battery_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

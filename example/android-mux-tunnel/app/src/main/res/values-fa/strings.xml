@@ -20,6 +20,11 @@
     <string name="hint_port">پورت</string>
     <string name="hint_tunnels">تعداد تونل (۱ تا ۱۶)</string>
     <string name="hint_handshake_host">Host</string>
+    <string name="button_diagnostics">عیب‌یابی (لاگ)</string>
+    <string name="button_copy">کپی</string>
+    <string name="button_share">اشتراک‌گذاری</string>
+    <string name="button_clear">پاک کردن</string>
+    <string name="log_copied">لاگ کپی شد</string>
     <string name="label_use_tls">فعال‌سازی TLS</string>
     <string name="hint_handshake_path">مسیر هندشیک (با / شروع شود)</string>
     <string name="hint_ws_key">Sec-WebSocket-Key</string>

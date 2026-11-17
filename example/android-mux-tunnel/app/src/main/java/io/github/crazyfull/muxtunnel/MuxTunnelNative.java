@@ -29,4 +29,9 @@ final class MuxTunnelNative {
     static native int nativeConnectedTunnels();
 
     static native void nativeStop();
+
+    /** The core's log (newest last) as one text, kept for the Diagnostics screen. */
+    static native String nativeGetLog();
+
+    static native void nativeClearLog();
 }

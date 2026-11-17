@@ -77,6 +77,12 @@ public class MainActivity extends Activity {
                 onToggle();
             }
         });
+        findViewById(R.id.diagnostics_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, DiagnosticsActivity.class));
+            }
+        });
         batteryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,6 +116,7 @@ public class MainActivity extends Activity {
         if (settings == null)
             return;
         settings.save(this);
+        DiagnosticLog.add("start tapped (build " + DefaultSettings.BUILD_STAMP + ")");
 
         if (Build.VERSION.SDK_INT >= 33)
             requestPermissions(new String[] { "android.permission.POST_NOTIFICATIONS" }, REQUEST_NOTIFICATIONS);

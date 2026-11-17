@@ -56,6 +56,12 @@ debug key. To sign with your own key add the repository secrets `ANDROID_KEYSTOR
 ## Notes
 
 * The code uses only framework APIs (no AndroidX), `targetSdk 33`.
+* **Diagnostics** (button on the main screen): the complete log without adb. Three parts: the app (service events,
+  start settings, a direct probe of the server, network changes with Wi-Fi/mobile data and validation, a line every
+  3 s with the connected tunnels, the engine's traffic counters and memory), the mux core (every connect, handshake,
+  tunnel lost/reconnect) and the engine's own log file. `WARNING: data goes out but nothing comes back` means the
+  tunnel looks up but carries no data. *Copy* / *Share* send the whole text. The log is kept while the app process
+  lives (a stop/start keeps it); *Clear* wipes it.
 * TLS is optional (*Enable TLS*, off by default). It needs BoringSSL built for the four ABIs:
   `ANDROID_NDK_HOME=... scripts/build-boringssl-android.sh` (the workflow does it) writes
   `example/android-mux-tunnel/boringssl/`, which `Android.mk` picks up. Without that directory the app builds

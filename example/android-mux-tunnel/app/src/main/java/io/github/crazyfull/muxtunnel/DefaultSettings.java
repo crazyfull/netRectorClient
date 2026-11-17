@@ -8,6 +8,9 @@ final class DefaultSettings {
     private DefaultSettings() {
     }
 
+    // Shown at the top of the diagnostic log, so a log can be matched with the build that wrote it.
+    static final String BUILD_STAMP = "2026-11-18 a";
+
     // Placeholders: enter your own CDN / server in the app. IP or domain.
     static final String CDN_ADDRESS = "irc.cdn.ir";
     static final int CDN_PORT = 8080;

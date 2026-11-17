@@ -6,9 +6,14 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.VpnService;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
@@ -19,7 +24,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
@@ -44,6 +51,8 @@ public class TunnelVpnService extends VpnService {
     private static final String CHANNEL_ID = "mux_tunnel";
     private static final int NOTIFICATION_ID = 1;
     private static final String HEV_CONFIG_FILE = "hev-socks5-tunnel.yml";
+    static final String HEV_LOG_FILE = "hev-socks5-tunnel.log";
+    private static final long STATS_INTERVAL_MS = 3000;
 
     private static volatile TunnelState sState = TunnelState.STOPPED;
     private static volatile int sErrorResource = 0;
@@ -53,7 +62,6 @@ public class TunnelVpnService extends VpnService {
         return sState;
     }
 
-    /** String resource id that explains the last ERROR state (0 = none). */
     /** Tunnels connected right now (0 unless the service is running). */
     static int getConnectedTunnels() {
         return sState == TunnelState.RUNNING ? MuxTunnelNative.nativeConnectedTunnels() : 0;
@@ -64,6 +72,7 @@ public class TunnelVpnService extends VpnService {
         return sState == TunnelState.RUNNING || sState == TunnelState.STARTING ? sTotalTunnels : 0;
     }
 
+    /** String resource id that explains the last ERROR state (0 = none). */
     static int getErrorResource() {
         return sErrorResource;
     }
@@ -76,10 +85,27 @@ public class TunnelVpnService extends VpnService {
     private boolean hevStarted;
     private PowerManager.WakeLock wakeLock;
     private WifiManager.WifiLock wifiLock;
+    private ConnectivityManager.NetworkCallback networkCallback;
+    private long lastTxBytes = -1;
+    private long lastRxBytes = -1;
+    private int stalledTicks;
+
+    /** Every few seconds: how many tunnels are up and how much the engine moved. */
+    private final Runnable statsTicker = new Runnable() {
+        @Override
+        public void run() {
+            if (sState != TunnelState.STARTING && sState != TunnelState.RUNNING)
+                return;
+            logStats();
+            mainHandler.postDelayed(this, STATS_INTERVAL_MS);
+        }
+    };
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         final String action = intent == null ? null : intent.getAction();
+
+        DiagnosticLog.add("service command: " + (action == null ? "restart by the system (null intent)" : action));
 
         if (ACTION_STOP.equals(action)) {
             TunnelSettings.setWantedRunning(this, false);
@@ -103,6 +129,7 @@ public class TunnelVpnService extends VpnService {
     @Override
     public void onRevoke() {
         // The user turned the VPN off in the system dialog or another VPN app took over
+        DiagnosticLog.add("onRevoke: the VPN was revoked (turned off in the system or another VPN took over)");
         TunnelSettings.setWantedRunning(this, false);
         stopTunnel(TunnelState.STOPPED, 0);
         stopSelf();
@@ -110,6 +137,7 @@ public class TunnelVpnService extends VpnService {
 
     @Override
     public void onDestroy() {
+        DiagnosticLog.add("onDestroy");
         stopTunnel(sState == TunnelState.ERROR ? TunnelState.ERROR : TunnelState.STOPPED, sErrorResource);
         super.onDestroy();
     }
@@ -128,14 +156,24 @@ public class TunnelVpnService extends VpnService {
 
             final TunnelSettings settings = TunnelSettings.load(this);
             sTotalTunnels = settings.tunnelCount;
+            DiagnosticLog.add("start: server " + settings.cdnAddress + ":" + settings.cdnPort + ", tunnels "
+                    + settings.tunnelCount + ", TLS " + (settings.useTls ? "on" : "off") + ", Host "
+                    + settings.handshakeHost + ", path " + settings.handshakePath);
             if (!settings.isValid()) {
                 failLocked(R.string.error_settings);
                 return;
             }
 
             acquireLocks();
+            lastTxBytes = -1;
+            lastRxBytes = -1;
+            stalledTicks = 0;
+            new File(getFilesDir(), HEV_LOG_FILE).delete();      // a fresh engine log for this run
+            probeServer(settings);
+            registerNetworkCallback();
 
             final int socksPort = findFreePort();
+            DiagnosticLog.add("SOCKS5 listener port " + socksPort);
 
             // 1. the mux client: SOCKS5 listener on loopback + tunnels to the CDN
             MuxTunnelNative.nativeReset();
@@ -146,7 +184,8 @@ public class TunnelVpnService extends VpnService {
                             DefaultSettings.SOCKS_ADDRESS, socksPort, settings.cdnAddress, settings.cdnPort,
                             settings.tunnelCount, settings.handshakeHost, settings.handshakePath,
                             settings.webSocketKey, settings.expectedAccept,
-                            DefaultSettings.KEEP_ALIVE_SECONDS, false, settings.useTls);
+                            DefaultSettings.KEEP_ALIVE_SECONDS, true, settings.useTls);
+                    DiagnosticLog.add("mux core returned " + code);
                     onCoreExited(code);
                 }
             }, "mux-core");
@@ -163,6 +202,7 @@ public class TunnelVpnService extends VpnService {
                 failLocked(R.string.error_vpn_permission);
                 return;
             }
+            DiagnosticLog.add("TUN established, fd " + tun.getFd() + ", mtu " + DefaultSettings.MTU);
 
             // 3. the engine that moves packets between the TUN and the SOCKS5 port
             try {
@@ -177,8 +217,11 @@ public class TunnelVpnService extends VpnService {
                 failLocked(R.string.error_engine);
                 return;
             }
+            DiagnosticLog.add("engine (hev-socks5-tunnel) started");
 
             sState = TunnelState.RUNNING;
+            mainHandler.removeCallbacks(statsTicker);
+            mainHandler.postDelayed(statsTicker, STATS_INTERVAL_MS);
             showForeground(getString(R.string.notification_running, settings.cdnAddress, settings.cdnPort));
         }
     }
@@ -191,7 +234,10 @@ public class TunnelVpnService extends VpnService {
     }
 
     private void stopLocked(TunnelState finalState, int errorResource) {
+        DiagnosticLog.add("stopping (" + finalState + (errorResource != 0 ? ": " + getString(errorResource) : "") + ")");
         stopping = true;
+        mainHandler.removeCallbacks(statsTicker);
+        unregisterNetworkCallback();
 
         if (hevStarted) {
             try {
@@ -223,6 +269,7 @@ public class TunnelVpnService extends VpnService {
         releaseLocks();
         sErrorResource = errorResource;
         sState = finalState;
+        DiagnosticLog.add("stopped, state " + finalState);
         stopForeground(true);
     }
 
@@ -245,6 +292,7 @@ public class TunnelVpnService extends VpnService {
             return;
         // The core ended by itself: the SOCKS5 port could not be opened
         Log.e(TAG, "mux client exited with code " + code);
+        DiagnosticLog.add("the mux client ended by itself with code " + code);
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -311,10 +359,12 @@ public class TunnelVpnService extends VpnService {
                 + "  tcp-buffer-size: 65536\n"
                 + "  connect-timeout: 10000\n"
                 + "  tcp-read-write-timeout: 300000\n"
-                + "  log-level: warn\n",
+                + "  log-file: '%s'\n"
+                + "  log-level: info\n",
                 DefaultSettings.MTU, DefaultSettings.TUN_IPV4, DefaultSettings.TUN_IPV6,
                 socksPort, DefaultSettings.SOCKS_ADDRESS,
-                DefaultSettings.DNS_ADDRESS, DefaultSettings.MAPPED_NETWORK, DefaultSettings.MAPPED_NETMASK);
+                DefaultSettings.DNS_ADDRESS, DefaultSettings.MAPPED_NETWORK, DefaultSettings.MAPPED_NETMASK,
+                new File(getFilesDir(), HEV_LOG_FILE).getAbsolutePath());
     }
 
     private static void writeFile(File file, String content) throws IOException {
@@ -338,6 +388,121 @@ public class TunnelVpnService extends VpnService {
         } catch (IOException e) {
             return DefaultSettings.SOCKS_FALLBACK_PORT;
         }
+    }
+
+    // ---------------------------------------------------------------- diagnostics
+
+    /** Can this phone reach the server directly (the app is outside the VPN)? Logged, not acted on. */
+    private void probeServer(final TunnelSettings settings) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final long begin = System.currentTimeMillis();
+                final Socket socket = new Socket();
+                try {
+                    final InetSocketAddress address = new InetSocketAddress(settings.cdnAddress, settings.cdnPort);
+                    if (address.isUnresolved()) {
+                        DiagnosticLog.add("probe: cannot resolve " + settings.cdnAddress);
+                        return;
+                    }
+                    socket.connect(address, 5000);
+                    DiagnosticLog.add("probe: " + address.getAddress().getHostAddress() + ":" + settings.cdnPort
+                            + " connected in " + (System.currentTimeMillis() - begin) + " ms, local address "
+                            + socket.getLocalAddress().getHostAddress());
+                } catch (IOException e) {
+                    DiagnosticLog.add("probe: cannot connect to " + settings.cdnAddress + ":" + settings.cdnPort
+                            + " after " + (System.currentTimeMillis() - begin) + " ms: " + e);
+                } finally {
+                    try {
+                        socket.close();
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+        }, "mux-probe").start();
+    }
+
+    private void logStats() {
+        String traffic = "engine stats not available";
+        try {
+            final long[] stats = TProxyService.TProxyGetStats();       // tx p, tx B, rx p, rx B
+            if (stats != null && stats.length >= 4) {
+                traffic = "tx " + stats[0] + "p/" + stats[1] + "B, rx " + stats[2] + "p/" + stats[3] + "B";
+                // Traffic leaves but nothing comes back: the tunnel looks up but does not carry data
+                final boolean sent = lastTxBytes >= 0 && stats[1] > lastTxBytes;
+                final boolean received = lastRxBytes >= 0 && stats[3] > lastRxBytes;
+                stalledTicks = sent && !received ? stalledTicks + 1 : 0;
+                if (stalledTicks == 2 || (stalledTicks > 2 && stalledTicks % 10 == 0))
+                    DiagnosticLog.add("WARNING: data goes out but nothing comes back for "
+                            + (stalledTicks * STATS_INTERVAL_MS / 1000) + " s");
+                lastTxBytes = stats[1];
+                lastRxBytes = stats[3];
+            }
+        } catch (Throwable t) {
+            traffic = "engine stats failed: " + t;
+        }
+        DiagnosticLog.add("tick tunnels " + MuxTunnelNative.nativeConnectedTunnels() + "/" + sTotalTunnels + ", "
+                + traffic + ", native heap " + (Debug.getNativeHeapAllocatedSize() / (1024 * 1024)) + " MB");
+    }
+
+    /** The phone's own network (Wi-Fi, mobile data) and its changes: a change is a common reason for a dead tunnel. */
+    private void registerNetworkCallback() {
+        if (Build.VERSION.SDK_INT < 24)
+            return;
+        try {
+            final ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(Network network) {
+                    DiagnosticLog.add("network: available " + network);
+                }
+
+                @Override
+                public void onLost(Network network) {
+                    DiagnosticLog.add("network: LOST " + network);
+                }
+
+                @Override
+                public void onCapabilitiesChanged(Network network, NetworkCapabilities capabilities) {
+                    DiagnosticLog.add("network: " + network + " " + describe(capabilities));
+                }
+
+                @Override
+                public void onLinkPropertiesChanged(Network network, LinkProperties properties) {
+                    DiagnosticLog.add("network: " + network + " interface " + properties.getInterfaceName()
+                            + ", addresses " + properties.getLinkAddresses() + ", dns " + properties.getDnsServers());
+                }
+            };
+            manager.registerDefaultNetworkCallback(networkCallback);
+        } catch (RuntimeException e) {
+            networkCallback = null;
+            DiagnosticLog.add("network monitor not available: " + e);
+        }
+    }
+
+    private void unregisterNetworkCallback() {
+        if (networkCallback == null)
+            return;
+        try {
+            ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE)).unregisterNetworkCallback(networkCallback);
+        } catch (RuntimeException ignored) {
+        }
+        networkCallback = null;
+    }
+
+    private static String describe(NetworkCapabilities capabilities) {
+        final StringBuilder text = new StringBuilder();
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
+            text.append("Wi-Fi");
+        else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
+            text.append("mobile data");
+        else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN))
+            text.append("VPN");
+        else
+            text.append("other transport");
+        text.append(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                ? ", internet validated" : ", NOT validated");
+        return text.toString();
     }
 
     // ---------------------------------------------------------------- keep running with the screen off

@@ -20,6 +20,11 @@
     <string name="hint_port">Port</string>
     <string name="hint_tunnels">Number of tunnels (1-16)</string>
     <string name="hint_handshake_host">Host</string>
+    <string name="button_diagnostics">Diagnostics</string>
+    <string name="button_copy">Copy</string>
+    <string name="button_share">Share</string>
+    <string name="button_clear">Clear</string>
+    <string name="log_copied">Log copied</string>
     <string name="label_use_tls">Enable TLS</string>
     <string name="hint_handshake_path">Handshake path (starts with /)</string>
     <string name="hint_ws_key">Sec-WebSocket-Key</string>
