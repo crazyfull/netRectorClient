@@ -927,7 +927,7 @@ void TCPSocket::_accepted(NrSocket fd)
 // ----------------------------------------------------------------------------
 // TLS
 // ----------------------------------------------------------------------------
-bool TCPSocket::enableTLS(TLSContext *ctx, const char *serverName)
+bool TCPSocket::enableTLS(TLSContext *ctx, bool bypassMode, const char *serverName)
 {
     if (!ctx || status != Ready)
         return false;
@@ -938,8 +938,11 @@ bool TCPSocket::enableTLS(TLSContext *ctx, const char *serverName)
 #endif
 
     m_tlsCtx = ctx;
-    if (serverName && *serverName)
+    m_tlsBypassMode = bypassMode;
+    if (serverName) {       // nullptr: default (host of connectTo); "": no SNI and no name check
         connInfo().serverName = serverName;
+        connInfo().serverNameSet = true;
+    }
     return true;
 }
 
@@ -981,6 +984,10 @@ bool TCPSocket::tlsStart(bool isServer)
     if (!m_ssl)
         return false;
 
+    // customized in BoringSSL, both server and client
+    if (m_tlsBypassMode)
+        SSL_set_record_protocol_version(m_ssl, TLS_CL_VERSION);
+
     if (SSL_set_fd(m_ssl, (int)m_SocketContext.fd) != 1) {
         SSL_free(m_ssl);
         m_ssl = nullptr;
@@ -994,7 +1001,7 @@ bool TCPSocket::tlsStart(bool isServer)
 
         std::string name;
         if (m_connInfo)
-            name = m_connInfo->serverName.empty() ? m_connInfo->host : m_connInfo->serverName;
+            name = m_connInfo->serverNameSet ? m_connInfo->serverName : m_connInfo->host;
         if (!name.empty()) {
             unsigned char tmp[sizeof(in6_addr)];
             bool isIP = inet_pton(AF_INET, name.c_str(), tmp) == 1 || inet_pton(AF_INET6, name.c_str(), tmp) == 1;

@@ -192,7 +192,7 @@ static void testTls(const std::string& dir)
     CHECK(strict != nullptr);
     if (strict) {
         ClientSocket* bad = new ClientSocket; bad->setReactor(&loop); bad->setAutoDelete(false);
-        CHECK(bad->enableTLS(strict, "localhost"));
+        CHECK(bad->enableTLS(strict, false, "localhost"));
         CHECK(bad->connectTo("127.0.0.1", (uint16_t)l.port()));
         CHECK(pump(loop, [&]{ return bad->failed && bad->closed; }));
         CHECK(!bad->connected);
@@ -205,7 +205,7 @@ static void testTls(const std::string& dir)
     if (good) {
         good->setALPN({"http/1.1"});
         ClientSocket* c = new ClientSocket; c->setReactor(&loop); c->setAutoDelete(false);
-        CHECK(c->enableTLS(good, "localhost"));
+        CHECK(c->enableTLS(good, false, "localhost"));
         CHECK(c->connectTo("127.0.0.1", (uint16_t)l.port()));
         CHECK(pump(loop, [&]{ return c->connected || c->failed; }));
         CHECK(c->connected);
