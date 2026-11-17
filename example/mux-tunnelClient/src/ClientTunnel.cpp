@@ -23,7 +23,10 @@ void ClientTunnel::handleOnConnected()
     // The handshake request must be the first thing on the wire, so the mux layer (keep-alive
     // pings) is not started here. MultiplexedTunnel::handleOnConnected() is called from
     // completeHandshake().
-    NR_LOG(LOG_INFO, "[client] TCP connected to %s:%u, sending the handshake", m_config.cdnAddress.c_str(), m_config.cdnPort);
+    // With TLS this is called after the TLS handshake, so a timeout from here on means the server (or a
+    // middlebox) does not answer the websocket-style handshake request, not that TLS was blocked.
+    NR_LOG(LOG_INFO, "[client] connected to %s:%u%s%s, sending the handshake request", m_config.cdnAddress.c_str(), m_config.cdnPort,
+           isTLS() ? ", TLS handshake done: " : "", isTLS() ? tlsVersion() : "");
     const std::string& request = m_handshake.request();
     if (!send(request.data(), request.size())) {
         close(true);

@@ -183,7 +183,7 @@ network settings applied, server <ip> excluded from the routes
 core: connecting tunnel 0 to <ip>:<port>
 core: SOCKS5 on port <port> (IPv4 loopback: yes, IPv6 loopback: yes), ...
 probe[after vpn]  ... connected, local address <wifi/lte address>
-core: TCP connected ..., sending the handshake
+core: connected to <ip>:<port>[, TLS handshake done: TLSv1.3], sending the handshake request
 core: tunnel established with <ip>:<port>
 mux tunnel is up, starting the engine
 utun descriptor 5
@@ -198,11 +198,13 @@ How to read it:
 |---|---|
 | `Network is unreachable` in `probe[before vpn]` | the phone has no route to that IP on this network |
 | probe local address `198.18.0.1` | the server connection loops into the tunnel (exclusion missing/ineffective) |
-| `tunnel N lost` repeating, `TCP connected` within 1-2 ms | loop into hev (real TCP to a remote takes >= tens of ms) |
+| `tunnel N lost` repeating, `connected to` within 1-2 ms | loop into hev (real TCP to a remote takes >= tens of ms) |
 | `closed while waiting for the handshake response (error 54)` | server/CDN closes during the websocket-style handshake: check Host/path/key/accept |
 | `utun->engine` grows, no `stream opened` in core, hev `socks5 client connect` without `server fd` | hev cannot reach the SOCKS5 listener (section 3.4) |
 | `utun->engine` does not grow while using apps | traffic does not enter the tunnel: routes/DNS |
 | `start failed: The server did not answer in time` | no mux tunnel within 15 s: server/CDN unreachable or handshake rejected |
+| TLS on: `TLS handshake done`, then `waiting for the handshake response (error 60)` | TLS is fine; the server/CDN does not answer the websocket-style request: check Host (it is also the SNI), path, key, port, or a middlebox that drops data after the handshake |
+| `connect error 49` in a `probe[engine style ...]` line | expected: it only reproduces the old IPv4-mapped problem; not a failure |
 | `res.rep 7` in the hev log | normal: the core refuses UDP ASSOCIATE |
 | `extension does not answer status requests` | provider messages do not work on this install; the UDP channel still does |
 
