@@ -1,5 +1,6 @@
 import Foundation
 import NetworkExtension
+import UIKit
 
 /// Owns the VPN configuration of the system settings, starts and stops the tunnel, and keeps the
 /// status (including the number of connected tunnels) up to date for the UI.
@@ -41,6 +42,7 @@ final class TunnelController {
     private var manager: NETunnelProviderManager?
     private var statusObserver: NSObjectProtocol?
     private var pollTimer: Timer?
+    private var activeObserver: NSObjectProtocol?
     private let pollInterval: TimeInterval = 1
 
     /// The settings can be edited only while the tunnel is not running.
@@ -58,11 +60,19 @@ final class TunnelController {
             self?.extensionReported(reported)
         }
         diagnosticReceiver.start()
+        // A suspended app may lose its socket: listen again whenever it comes back
+        activeObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.diagnosticReceiver.restart()
+        }
         loadManager()
     }
 
     deinit {
         pollTimer?.invalidate()
+        if let observer = activeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
         if let observer = statusObserver {
             NotificationCenter.default.removeObserver(observer)
         }
@@ -233,6 +243,19 @@ final class TunnelController {
         pollTimer?.invalidate()
         pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
             self?.requestStatus()
+            self?.restartReceiverIfExtensionIsSilent()
+        }
+    }
+
+    /// The extension sends its status every second while it runs. If nothing arrives although the
+    /// tunnel is connected, the app's socket is most likely dead: bind a new one.
+    private func restartReceiverIfExtensionIsSilent() {
+        guard manager?.connection.status == .connected else {
+            return
+        }
+        let silentFor = diagnosticReceiver.lastReceivedAt.map { Date().timeIntervalSince($0) } ?? .infinity
+        if silentFor > 4 {
+            diagnosticReceiver.restart()
         }
     }
 

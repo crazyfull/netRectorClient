@@ -8,6 +8,15 @@ final class DiagnosticReceiver {
     private let lock = NSLock()
     private let maxLines = 500
 
+    private var lastReceived: Date?
+
+    /// When the last datagram (log line or status) arrived; nil if none has.
+    var lastReceivedAt: Date? {
+        lock.lock()
+        defer { lock.unlock() }
+        return lastReceived
+    }
+
     /// Called on the main thread when the extension reports its status.
     var onStatus: ((TunnelStatus) -> Void)?
 
@@ -21,6 +30,16 @@ final class DiagnosticReceiver {
         lock.lock()
         lines.removeAll()
         lock.unlock()
+    }
+
+    /// Closes the socket and binds a new one. iOS may close the sockets of a suspended app, after which
+    /// the old one never receives anything again: the app calls this when it becomes active again and
+    /// whenever the extension has been silent for a while.
+    func restart() {
+        source?.cancel()
+        source = nil
+        queue.sync {}       // the cancel handler (which closes the descriptor) has run
+        start()
     }
 
     /// Starts listening. Does nothing when already listening or when the port cannot be bound.
@@ -70,6 +89,9 @@ final class DiagnosticReceiver {
             if count <= 0 {
                 break
             }
+            lock.lock()
+            lastReceived = Date()
+            lock.unlock()
             let message = String(decoding: buffer[0..<count], as: UTF8.self)
             if let status = DiagnosticChannel.status(from: message) {
                 DispatchQueue.main.async { [weak self] in
