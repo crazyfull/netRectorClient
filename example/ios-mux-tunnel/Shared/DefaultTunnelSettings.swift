@@ -4,11 +4,14 @@ import Foundation
 /// the user changes the editable ones in the app (saved by TunnelConfigurationStore).
 enum DefaultTunnelSettings {
     // Shown in the diagnostic log, to know which build is installed.
-    static let buildStamp = "2026-11-15 n"
+    static let buildStamp = "2026-11-17 a"
 
     // Placeholders: enter your own CDN / server in the app. IP or domain.
     static let cdnAddress = "irc.cdn.ir"
     static let cdnPort = 8080
+
+    // Wrap the tunnel connections in TLS (SNI = the handshake host; the certificate is not verified).
+    static let useTLS = false
 
     // Websocket-style handshake sent as the first bytes of every tunnel connection.
     static let handshakeHost = "sv1.server.ir"

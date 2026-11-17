@@ -12,7 +12,9 @@ get_filename_component(REPOSITORY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." AB
 
 set(NETRECTOR_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(NETRECTOR_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(NETRECTOR_ENABLE_TLS OFF CACHE BOOL "" FORCE)
+# TLS needs BoringSSL for this slice: scripts/buildNativeCore.sh passes -DMUX_ENABLE_TLS=ON -DBORINGSSL_ROOT=<slice dir>
+option(MUX_ENABLE_TLS "Build the core with TLS (BoringSSL)" OFF)
+set(NETRECTOR_ENABLE_TLS ${MUX_ENABLE_TLS} CACHE BOOL "" FORCE)
 add_subdirectory("${REPOSITORY_ROOT}" netRectorClient)
 
 set(CLIENT_SOURCE_DIR "${REPOSITORY_ROOT}/example/mux-tunnelClient/src")

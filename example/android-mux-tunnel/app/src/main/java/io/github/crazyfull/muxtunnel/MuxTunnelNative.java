@@ -7,6 +7,8 @@ package io.github.crazyfull.muxtunnel;
 final class MuxTunnelNative {
     /** nativeRun result: the local SOCKS5 port could not be opened. */
     static final int RESULT_CANNOT_LISTEN = 1;
+    /** nativeRun result: TLS was requested but this build has no TLS (no BoringSSL). */
+    static final int RESULT_TLS_UNAVAILABLE = 3;
 
     private MuxTunnelNative() {
     }
@@ -21,7 +23,10 @@ final class MuxTunnelNative {
     static native int nativeRun(String listenAddress, int listenPort, String cdnAddress, int cdnPort,
                                 int tunnelCount, String handshakeHost, String handshakePath,
                                 String webSocketKey, String expectedAccept, int keepAliveSeconds,
-                                boolean verbose);
+                                boolean verbose, boolean useTls);
+
+    /** Tunnels that are connected right now (0 when the core is not running). Thread-safe. */
+    static native int nativeConnectedTunnels();
 
     static native void nativeStop();
 }

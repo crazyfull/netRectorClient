@@ -10,6 +10,8 @@
     <string name="status_stopped">متوقف است</string>
     <string name="status_starting">در حال شروع…</string>
     <string name="status_running">در حال اجرا: تمام ترافیک از تونل عبور می‌کند</string>
+    <string name="status_running_tunnels">در حال اجرا: تمام ترافیک از تونل عبور می‌کند\nتونل‌ها %1$d / %2$d</string>
+    <string name="status_no_tunnel">در انتظار تونل…\nتونل‌ها %1$d / %2$d</string>
     <string name="status_error">متوقف شد: %1$s</string>
 
     <string name="section_server">سرور CDN</string>
@@ -17,10 +19,12 @@
     <string name="hint_address">آدرس (IP یا دامنه)</string>
     <string name="hint_port">پورت</string>
     <string name="hint_tunnels">تعداد تونل (۱ تا ۱۶)</string>
-    <string name="hint_handshake_host">هدر Host هندشیک</string>
+    <string name="hint_handshake_host">Host</string>
+    <string name="label_use_tls">فعال‌سازی TLS</string>
     <string name="hint_handshake_path">مسیر هندشیک (با / شروع شود)</string>
     <string name="hint_ws_key">Sec-WebSocket-Key</string>
     <string name="hint_ws_accept">Sec-WebSocket-Accept مورد انتظار (خالی = بررسی نشود)</string>
+    <string name="note_tls">Host در هندشیک فرستاده می‌شود و با فعال بودن TLS به‌عنوان نام سرور TLS (SNI) هم استفاده می‌شود. گواهی سرور بررسی نمی‌شود.</string>
     <string name="note_tcp_only">فقط ترافیک TCP (و DNS) از تونل عبور می‌کند. سایر ترافیک UDP پشتیبانی نمی‌شود.</string>
 
     <string name="error_address">یک آدرس IP یا دامنه وارد کنید</string>
@@ -30,6 +34,7 @@
     <string name="error_settings">تنظیمات نامعتبر است</string>
     <string name="error_vpn_permission">اجازه‌ی VPN داده نشد</string>
     <string name="error_engine">موتور tun2socks اجرا نشد</string>
+    <string name="error_tls">TLS در این نسخه در دسترس نیست</string>
     <string name="error_core">کلاینت تونل به‌طور غیرمنتظره متوقف شد</string>
 
     <string name="notification_channel">وضعیت تونل</string>

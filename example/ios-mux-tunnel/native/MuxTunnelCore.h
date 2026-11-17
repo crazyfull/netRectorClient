@@ -27,12 +27,14 @@ typedef struct MuxTunnelCoreConfig {
     const char* expectedAccept;         // empty = do not check
     uint32_t keepAliveSeconds;          // 0 = off
     int32_t verbose;                    // non-zero = debug log
+    int32_t useTls;                     // non-zero = wrap the tunnels in TLS (SNI = handshakeHost)
 } MuxTunnelCoreConfig;
 
 enum {
     muxTunnelCoreResultStopped = 0,         // stopped by muxTunnelCoreStop()
     muxTunnelCoreResultCannotListen = 1,    // the SOCKS5 port could not be opened
-    muxTunnelCoreResultInvalidConfig = 2
+    muxTunnelCoreResultInvalidConfig = 2,
+    muxTunnelCoreResultTlsUnavailable = 3   // useTls was set but the library has no TLS (no BoringSSL)
 };
 
 // Clears a stop request left over from a previous run. Call before starting the thread.

@@ -68,6 +68,12 @@
             android:text="@string/section_handshake"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
+        <CheckBox
+            android:id="@+id/use_tls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_use_tls" />
+
         <EditText
             android:id="@+id/handshake_host"
             android:layout_width="match_parent"
@@ -104,6 +110,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
+            android:text="@string/note_tls"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
             android:text="@string/note_tcp_only"
             android:textAppearance="?android:attr/textAppearanceSmall" />
     </LinearLayout>

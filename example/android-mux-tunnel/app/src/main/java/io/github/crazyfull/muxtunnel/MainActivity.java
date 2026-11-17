@@ -12,6 +12,7 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +35,7 @@ public class MainActivity extends Activity {
     private EditText cdnAddress;
     private EditText cdnPort;
     private EditText tunnelCount;
+    private CheckBox useTls;
     private EditText handshakeHost;
     private EditText handshakePath;
     private EditText webSocketKey;
@@ -50,6 +52,7 @@ public class MainActivity extends Activity {
         cdnAddress = (EditText) findViewById(R.id.cdn_address);
         cdnPort = (EditText) findViewById(R.id.cdn_port);
         tunnelCount = (EditText) findViewById(R.id.tunnel_count);
+        useTls = (CheckBox) findViewById(R.id.use_tls);
         handshakeHost = (EditText) findViewById(R.id.handshake_host);
         handshakePath = (EditText) findViewById(R.id.handshake_path);
         webSocketKey = (EditText) findViewById(R.id.ws_key);
@@ -62,6 +65,7 @@ public class MainActivity extends Activity {
         cdnAddress.setText(settings.cdnAddress);
         cdnPort.setText(String.valueOf(settings.cdnPort));
         tunnelCount.setText(String.valueOf(settings.tunnelCount));
+        useTls.setChecked(settings.useTls);
         handshakeHost.setText(settings.handshakeHost);
         handshakePath.setText(settings.handshakePath);
         webSocketKey.setText(settings.webSocketKey);
@@ -176,6 +180,7 @@ public class MainActivity extends Activity {
         }
         settings.tunnelCount = tunnels;
 
+        settings.useTls = useTls.isChecked();
         settings.handshakeHost = handshakeHost.getText().toString().trim();
         settings.handshakePath = handshakePath.getText().toString().trim();
         if (!settings.handshakePath.startsWith("/")) {
@@ -204,6 +209,7 @@ public class MainActivity extends Activity {
         cdnAddress.setEnabled(editable);
         cdnPort.setEnabled(editable);
         tunnelCount.setEnabled(editable);
+        useTls.setEnabled(editable);
         handshakeHost.setEnabled(editable);
         handshakePath.setEnabled(editable);
         webSocketKey.setEnabled(editable);
@@ -215,7 +221,12 @@ public class MainActivity extends Activity {
             toggleButton.setText(R.string.button_stop);
             break;
         case RUNNING:
-            statusView.setText(R.string.status_running);
+            // like the iOS app: how many of the tunnels are connected right now
+            final int connected = TunnelVpnService.getConnectedTunnels();
+            final int total = TunnelVpnService.getTotalTunnels();
+            statusView.setText(connected > 0
+                    ? getString(R.string.status_running_tunnels, connected, total)
+                    : getString(R.string.status_no_tunnel, connected, total));
             toggleButton.setText(R.string.button_stop);
             break;
         case ERROR:

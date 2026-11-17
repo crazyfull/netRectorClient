@@ -13,10 +13,12 @@
 "field.address" = "Address (IP or domain)";
 "field.port" = "Port";
 "field.tunnels" = "Number of tunnels: %d";
-"field.handshakeHost" = "Handshake Host header";
+"field.useTLS" = "Enable TLS";
+"field.handshakeHost" = "Host";
 "field.handshakePath" = "Handshake path (starts with /)";
 "field.webSocketKey" = "Sec-WebSocket-Key";
 "field.expectedAccept" = "Expected Sec-WebSocket-Accept (empty = do not check)";
+"note.tls" = "Host is sent in the handshake and, with Enable TLS, also used as the TLS server name (SNI). The server certificate is not verified.";
 "note.tcpOnly" = "Only TCP traffic (and DNS) is tunneled. Other UDP traffic is not supported.";
 
 "error.address" = "Enter an IP address or a domain";

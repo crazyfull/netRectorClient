@@ -1,4 +1,5 @@
 import Foundation
+import MuxTunnelCore
 
 /// Why the Packet Tunnel extension could not start or had to stop.
 enum TunnelProviderError: LocalizedError {
@@ -23,6 +24,9 @@ enum TunnelProviderError: LocalizedError {
         case .cannotResolveServer(let host):
             return "Cannot resolve the server address \(host)."
         case .muxClientStopped(let code):
+            if code == Int32(muxTunnelCoreResultTlsUnavailable) {
+                return "TLS is not available in this build."
+            }
             return "The mux client stopped unexpectedly (code \(code))."
         case .serverNotAnswering:
             return "The server did not answer in time."

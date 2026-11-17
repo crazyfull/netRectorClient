@@ -984,9 +984,14 @@ bool TCPSocket::tlsStart(bool isServer)
     if (!m_ssl)
         return false;
 
-    // customized in BoringSSL, both server and client
-    if (m_tlsBypassMode)
+    // Customized BoringSSL only (both server and client). CMake defines NETRECTOR_BSSL_RECORD_VERSION when
+    // the BoringSSL in use has SSL_set_record_protocol_version / TLS_CL_VERSION. A stock BoringSSL (the
+    // mobile apps for now) does not: the call is skipped and the TLS records use the normal version.
+    if (m_tlsBypassMode) {
+#ifdef NETRECTOR_BSSL_RECORD_VERSION
         SSL_set_record_protocol_version(m_ssl, TLS_CL_VERSION);
+#endif
+    }
 
     if (SSL_set_fd(m_ssl, (int)m_SocketContext.fd) != 1) {
         SSL_free(m_ssl);

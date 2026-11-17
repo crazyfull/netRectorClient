@@ -13,10 +13,12 @@
 "field.address" = "آدرس (IP یا دامنه)";
 "field.port" = "پورت";
 "field.tunnels" = "تعداد تونل: %d";
-"field.handshakeHost" = "هدر Host هندشیک";
+"field.useTLS" = "فعال‌سازی TLS";
+"field.handshakeHost" = "Host";
 "field.handshakePath" = "مسیر هندشیک (با / شروع شود)";
 "field.webSocketKey" = "Sec-WebSocket-Key";
 "field.expectedAccept" = "Sec-WebSocket-Accept مورد انتظار (خالی = بررسی نشود)";
+"note.tls" = "Host در هندشیک فرستاده می‌شود و با فعال بودن TLS به‌عنوان نام سرور TLS (SNI) هم استفاده می‌شود. گواهی سرور بررسی نمی‌شود.";
 "note.tcpOnly" = "فقط ترافیک TCP (و DNS) از تونل عبور می‌کند. سایر ترافیک UDP پشتیبانی نمی‌شود.";
 
 "error.address" = "یک آدرس IP یا دامنه وارد کنید";

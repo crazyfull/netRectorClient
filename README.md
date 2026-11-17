@@ -26,6 +26,13 @@ accepts any server certificate), `createClientFromPEM`, `createServer(certFile, 
 `createServerSelfSigned(commonName)`, which generates an ECDSA P-256 self-signed certificate in
 memory (valid 10 years, CN and subjectAltName = `commonName`). TLS needs BoringSSL at build time.
 
+**Customized vs stock BoringSSL.** The record-version customization (`SSL_set_record_protocol_version(ssl,
+TLS_CL_VERSION)`, used in bypass mode) exists only in the customized BoringSSL. CMake checks for it and defines
+`NETRECTOR_BSSL_RECORD_VERSION` when it is there; with a stock BoringSSL the call is skipped and TLS works normally
+(this is what the Android and iOS apps use for now: `scripts/fetch-boringssl.sh` pins a stock commit). To use the
+customized one later: build it the same way, point `BORINGSSL_ROOT` (CMake) / `BORINGSSL_SRC` (scripts) at it, and for
+the Android `ndk-build` pass `BORINGSSL_CUSTOM=1`.
+
 ## Build
 
 ```sh

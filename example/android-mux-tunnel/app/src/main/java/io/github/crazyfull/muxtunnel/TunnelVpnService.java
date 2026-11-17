@@ -47,12 +47,23 @@ public class TunnelVpnService extends VpnService {
 
     private static volatile TunnelState sState = TunnelState.STOPPED;
     private static volatile int sErrorResource = 0;
+    private static volatile int sTotalTunnels = 0;
 
     static TunnelState getState() {
         return sState;
     }
 
     /** String resource id that explains the last ERROR state (0 = none). */
+    /** Tunnels connected right now (0 unless the service is running). */
+    static int getConnectedTunnels() {
+        return sState == TunnelState.RUNNING ? MuxTunnelNative.nativeConnectedTunnels() : 0;
+    }
+
+    /** Tunnels the running configuration asks for. */
+    static int getTotalTunnels() {
+        return sState == TunnelState.RUNNING || sState == TunnelState.STARTING ? sTotalTunnels : 0;
+    }
+
     static int getErrorResource() {
         return sErrorResource;
     }
@@ -116,6 +127,7 @@ public class TunnelVpnService extends VpnService {
             TunnelSettings.setWantedRunning(this, true);
 
             final TunnelSettings settings = TunnelSettings.load(this);
+            sTotalTunnels = settings.tunnelCount;
             if (!settings.isValid()) {
                 failLocked(R.string.error_settings);
                 return;
@@ -134,7 +146,7 @@ public class TunnelVpnService extends VpnService {
                             DefaultSettings.SOCKS_ADDRESS, socksPort, settings.cdnAddress, settings.cdnPort,
                             settings.tunnelCount, settings.handshakeHost, settings.handshakePath,
                             settings.webSocketKey, settings.expectedAccept,
-                            DefaultSettings.KEEP_ALIVE_SECONDS, false);
+                            DefaultSettings.KEEP_ALIVE_SECONDS, false, settings.useTls);
                     onCoreExited(code);
                 }
             }, "mux-core");
@@ -240,7 +252,8 @@ public class TunnelVpnService extends VpnService {
                     if (stopping)
                         return;
                     TunnelSettings.setWantedRunning(TunnelVpnService.this, false);
-                    stopLocked(TunnelState.ERROR, R.string.error_core);
+                    stopLocked(TunnelState.ERROR, code == MuxTunnelNative.RESULT_TLS_UNAVAILABLE
+                            ? R.string.error_tls : R.string.error_core);
                 }
                 stopSelf();
             }

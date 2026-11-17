@@ -12,6 +12,10 @@ final class DefaultSettings {
     static final String CDN_ADDRESS = "irc.cdn.ir";
     static final int CDN_PORT = 8080;
 
+    // Wrap the tunnel connections in TLS. The server name (SNI) is the handshake Host below.
+    // The certificate is not verified (the server may use a self-signed one).
+    static final boolean USE_TLS = false;
+
     // Websocket-style handshake sent as the first bytes of every tunnel connection.
     static final String HANDSHAKE_HOST = "sv1.server.ir";
     static final String HANDSHAKE_PATH = "/";

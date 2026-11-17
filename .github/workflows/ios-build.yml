@@ -41,6 +41,12 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Cache BoringSSL (TLS, built for every iOS slice)
+        uses: actions/cache@v4
+        with:
+          path: example/ios-mux-tunnel/build/boringssl
+          key: boringssl-ios-${{ hashFiles('scripts/fetch-boringssl.sh', 'example/ios-mux-tunnel/scripts/buildBoringSSL.sh') }}
+
       - name: Build the native core (xcframework)
         run: ./scripts/buildNativeCore.sh
 

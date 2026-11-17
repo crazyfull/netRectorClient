@@ -64,7 +64,7 @@ int ClientApplication::run(bool handleSignals)
                                                   m_config.tlsCaFile.empty() ? nullptr : m_config.tlsCaFile.c_str(), &error));
         if (!tlsContext) {
             NR_LOG(LOG_ERROR, "[client] TLS is not available: %s", error.c_str());
-            return 1;
+            return 3;       // 1 = cannot listen, 3 = TLS requested but not available in this build
         }
         NR_LOG(LOG_INFO, "[client] TLS enabled, server certificate %s",
                m_config.tlsVerifyPeer ? "is verified" : "is NOT verified");

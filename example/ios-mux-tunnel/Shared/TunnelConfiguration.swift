@@ -9,6 +9,23 @@ struct TunnelConfiguration: Codable, Equatable {
     var handshakePath = DefaultTunnelSettings.handshakePath
     var webSocketKey = DefaultTunnelSettings.webSocketKey
     var expectedAccept = DefaultTunnelSettings.expectedAccept
+    /// Wrap the tunnel connections in TLS. The server name (SNI) is `handshakeHost`.
+    var useTLS = DefaultTunnelSettings.useTLS
+
+    init() {}
+
+    // A configuration saved by an older version has no `useTLS`: decode with defaults for missing keys.
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        cdnAddress = try values.decodeIfPresent(String.self, forKey: .cdnAddress) ?? cdnAddress
+        cdnPort = try values.decodeIfPresent(Int.self, forKey: .cdnPort) ?? cdnPort
+        tunnelCount = try values.decodeIfPresent(Int.self, forKey: .tunnelCount) ?? tunnelCount
+        handshakeHost = try values.decodeIfPresent(String.self, forKey: .handshakeHost) ?? handshakeHost
+        handshakePath = try values.decodeIfPresent(String.self, forKey: .handshakePath) ?? handshakePath
+        webSocketKey = try values.decodeIfPresent(String.self, forKey: .webSocketKey) ?? webSocketKey
+        expectedAccept = try values.decodeIfPresent(String.self, forKey: .expectedAccept) ?? expectedAccept
+        useTLS = try values.decodeIfPresent(Bool.self, forKey: .useTLS) ?? useTLS
+    }
 
     /// Throws the first problem found.
     func validate() throws {

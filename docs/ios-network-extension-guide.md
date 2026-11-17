@@ -236,7 +236,12 @@ How to read it:
 - **UDP is not carried.** hev is configured with `udp: 'udp'`, so UDP flows ask the core for SOCKS5 UDP ASSOCIATE,
   which it refuses. DNS is unaffected (hev answers it). QUIC/HTTP3 falls back to TCP in Safari. For real UDP:
   implement UDP in the mux protocol or use hev's UDP-over-TCP mode on both ends.
-- **TLS is off** in the mobile builds (`NETRECTOR_ENABLE_TLS=OFF`). A real login needs BoringSSL built for iOS.
+- **TLS** (build `2026-11-17 a`+): the *Enable TLS* switch wraps the tunnels in TLS, SNI = the *Host* field (formerly
+  "Handshake Host header"), certificate not verified. BoringSSL is **stock** and built per slice by
+  `scripts/buildBoringSSL.sh`; the record-version customization (`TLS_CL_VERSION`) is skipped until the customized
+  BoringSSL is used. **Not yet verified on a device or on a macOS runner**: check that the log shows
+  `TLS enabled, server certificate is NOT verified` and that tunnels connect. An HTTP/TLS client for the real login
+  can reuse the same BoringSSL.
 - No reconnect logic on network change (Wi-Fi <-> LTE): the server exclusion route and the physical interface
   change; use `NWPathMonitor` in the extension and re-apply settings.
 - No on-demand rules, no kill switch decision (`includeAllNetworks`), no IPv6 leak review.

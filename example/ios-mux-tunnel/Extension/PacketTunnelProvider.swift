@@ -17,6 +17,20 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     // The state is written from the provider queue and from the engine threads
     private let stateLock = NSLock()
     private var storedState = TunnelConnectionState.stopped
+    private var storedFailure: Error?
+    /// Why the engines stopped (the first failure), for the start that is still waiting.
+    private var lastFailure: Error? {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return storedFailure
+        }
+        set {
+            stateLock.lock()
+            storedFailure = newValue
+            stateLock.unlock()
+        }
+    }
     private var state: TunnelConnectionState {
         get {
             stateLock.lock()
@@ -34,6 +48,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
 
     override func startTunnel(options: [String: NSObject]?, completionHandler: @escaping (Error?) -> Void) {
         state = .starting
+        lastFailure = nil
         muxTunnelCoreSetLogFunction { level, message in
             if let message = message {
                 DiagnosticLog.shared.add("core[\(level)] \(String(cString: message))")
@@ -161,7 +176,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                     return
                 }
                 if self.state == .failed {
-                    completion(TunnelProviderError.muxClientStopped(code: -1))
+                    completion(self.lastFailure ?? TunnelProviderError.muxClientStopped(code: -1))
                     return
                 }
                 if Date() >= deadline {
@@ -254,6 +269,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     /// Called when one of the engines ends by itself: the VPN cannot work without both.
     private func fail(with error: Error) {
         DiagnosticLog.shared.add("failed: \(error.localizedDescription)")
+        lastFailure = error
         state = .failed
         // Stay alive for a while: the app reads the log (the only way to see why) and then stops
         // the tunnel itself. Without this the process ends and the log is gone.

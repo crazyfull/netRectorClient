@@ -47,7 +47,7 @@ JNIEXPORT jint JNICALL
 Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
     JNIEnv* env, jclass, jstring listenAddress, jint listenPort, jstring cdnAddress, jint cdnPort,
     jint tunnelCount, jstring handshakeHost, jstring handshakePath, jstring webSocketKey,
-    jstring expectedAccept, jint keepAliveSeconds, jboolean verbose)
+    jstring expectedAccept, jint keepAliveSeconds, jboolean verbose, jboolean useTls)
 {
     ClientConfig config;
     config.listenAddress = toString(env, listenAddress);
@@ -61,6 +61,7 @@ Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
     config.expectedWebSocketAccept = toString(env, expectedAccept);
     config.keepAliveSeconds = static_cast<uint32_t>(keepAliveSeconds < 0 ? 0 : keepAliveSeconds);
     config.verbose = verbose == JNI_TRUE;
+    config.useTls = useTls == JNI_TRUE;     // SNI = the handshake host (tlsServerName stays empty)
 
     if (config.tunnelCount < DefaultClientConfig::MinTunnelCount)
         config.tunnelCount = DefaultClientConfig::MinTunnelCount;
@@ -82,6 +83,14 @@ Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
         g_application = nullptr;
     }
     return code;
+}
+
+// Number of mux tunnels that are connected (handshake done) right now; 0 when the core is not running.
+JNIEXPORT jint JNICALL
+Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeConnectedTunnels(JNIEnv*, jclass)
+{
+    std::lock_guard<std::mutex> lock(g_mutex);
+    return g_application ? static_cast<jint>(g_application->connectedTunnelCount()) : 0;
 }
 
 JNIEXPORT void JNICALL

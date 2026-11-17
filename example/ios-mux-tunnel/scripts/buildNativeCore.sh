@@ -31,6 +31,13 @@ applyHevPatches() {
 }
 applyHevPatches
 
+# BoringSSL (libssl.a, libcrypto.a) per slice, for TLS. Set MUX_SKIP_TLS=1 to build without TLS.
+# (outside WORK_DIR: that one is wiped below)
+readonly TLS_DIR="$PROJECT_DIR/build/boringssl"
+if [ "${MUX_SKIP_TLS:-0}" != "1" ]; then
+    "$PROJECT_DIR/scripts/buildBoringSSL.sh" "$TLS_DIR"
+fi
+
 # buildSlice <sdk> <arch>  ->  $WORK_DIR/slices/<sdk>-<arch>/libMuxTunnelCore.a
 buildSlice() {
     local sdk="$1" arch="$2"
@@ -39,13 +46,20 @@ buildSlice() {
     local versionFlag="-m${sdk}-version-min=$MIN_IOS_VERSION"
     [ "$sdk" = "iphonesimulator" ] && versionFlag="-mios-simulator-version-min=$MIN_IOS_VERSION"
 
+    local tlsFlags=() tlsLibs=()
+    if [ "${MUX_SKIP_TLS:-0}" != "1" ]; then
+        tlsFlags=(-DMUX_ENABLE_TLS=ON -DBORINGSSL_ROOT="$TLS_DIR/$sdk-$arch")
+        tlsLibs=("$TLS_DIR/$sdk-$arch/lib/libssl.a" "$TLS_DIR/$sdk-$arch/lib/libcrypto.a")
+    fi
+
     echo "== core: $sdk $arch"
     cmake -S "$PROJECT_DIR/native" -B "$buildDir" \
         -DCMAKE_SYSTEM_NAME=iOS \
         -DCMAKE_OSX_SYSROOT="$sdk" \
         -DCMAKE_OSX_ARCHITECTURES="$arch" \
         -DCMAKE_OSX_DEPLOYMENT_TARGET="$MIN_IOS_VERSION" \
-        -DCMAKE_BUILD_TYPE=Release >/dev/null
+        -DCMAKE_BUILD_TYPE=Release \
+        ${tlsFlags[@]+"${tlsFlags[@]}"} >/dev/null
     cmake --build "$buildDir" --target muxTunnelCore -j "$(sysctl -n hw.ncpu)"
 
     echo "== hev-socks5-tunnel: $sdk $arch"
@@ -64,7 +78,8 @@ buildSlice() {
         "$HEV_DIR/bin/libhev-socks5-tunnel.a" \
         "$HEV_DIR/third-part/lwip/bin/liblwip.a" \
         "$HEV_DIR/third-part/yaml/bin/libyaml.a" \
-        "$HEV_DIR/third-part/hev-task-system/bin/libhev-task-system.a"
+        "$HEV_DIR/third-part/hev-task-system/bin/libhev-task-system.a" \
+        ${tlsLibs[@]+"${tlsLibs[@]}"}
     make -C "$HEV_DIR" clean >/dev/null 2>&1 || true
 }
 

@@ -20,6 +20,9 @@ apps -> TUN -> hev-socks5-tunnel -> SOCKS5 127.0.0.1:<port> -> mux-tunnelClient 
 
 1. Enter the CDN/server **address (IP or domain)**, **port** and the **number of tunnels** (1-16).
    The handshake fields (Host, path, key, accept) are under *Handshake (advanced)*.
+   Tick **Enable TLS** to wrap the tunnel connections in TLS: the **Host** field is also the TLS server name
+   (SNI; not sent for an IP address) and the server certificate is not verified. The status line shows how
+   many tunnels are connected (`Tunnels 1 / 1`).
 2. Press **Start**. Android asks once for VPN permission.
 3. Press **Allow running in background** (shown while battery optimization is on) so the system
    does not stop the service when the screen is off. Some vendors (Xiaomi, Huawei, Samsung…) have
@@ -53,8 +56,12 @@ debug key. To sign with your own key add the repository secrets `ANDROID_KEYSTOR
 ## Notes
 
 * The code uses only framework APIs (no AndroidX), `targetSdk 33`.
-* TLS is not used between the app and the CDN (same as the example's default); the handshake and
-  mux run over plain TCP, which is what a CDN in front of the server expects.
+* TLS is optional (*Enable TLS*, off by default). It needs BoringSSL built for the four ABIs:
+  `ANDROID_NDK_HOME=... scripts/build-boringssl-android.sh` (the workflow does it) writes
+  `example/android-mux-tunnel/boringssl/`, which `Android.mk` picks up. Without that directory the app builds
+  without TLS and *Enable TLS* stops the tunnel with "TLS is not available in this build". The BoringSSL is a stock
+  one: its record-version customization is skipped (see the main README).
+* Off, the handshake and mux run over plain TCP, which is what a CDN in front of the server expects.
 * Status of verification: the native core and the JNI bridge were tested on Linux against
   mux-tunnelServer; the APK itself is built by the workflow (it could not be built or run in the
   authoring environment, so report any Gradle/NDK error from the first run).

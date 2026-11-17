@@ -50,6 +50,20 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${NDK_VERSION}" "platforms;android-34" "build-tools;34.0.0"
 
+      - name: Cache BoringSSL (built for every ABI)
+        id: boringssl-cache
+        uses: actions/cache@v4
+        with:
+          path: example/android-mux-tunnel/boringssl
+          key: boringssl-android-${{ hashFiles('scripts/fetch-boringssl.sh', 'scripts/build-boringssl-android.sh') }}-ndk${{ env.NDK_VERSION }}
+
+      - name: Build BoringSSL (TLS)
+        if: steps.boringssl-cache.outputs.cache-hit != 'true'
+        working-directory: .
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/${NDK_VERSION}"
+          ./scripts/build-boringssl-android.sh
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 

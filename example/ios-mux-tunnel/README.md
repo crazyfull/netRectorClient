@@ -27,6 +27,9 @@ Each class / struct / enum is in its own file; Swift naming (PascalCase types, c
 The extension is a separate process. The app sends `TunnelProviderRequest.status` to it once a
 second (`sendProviderMessage`); the extension answers with a `TunnelStatus` built from
 `muxTunnelCoreConnectedTunnels()`, which counts the tunnels that finished the handshake right now.
+TLS: the **Enable TLS** switch wraps the tunnel connections in TLS; the **Host** field is also the TLS server name
+(SNI) and the certificate is not verified. `scripts/buildNativeCore.sh` builds BoringSSL for every slice
+(`scripts/buildBoringSSL.sh`, stock BoringSSL, pinned by `scripts/fetch-boringssl.sh`); `MUX_SKIP_TLS=1` builds without TLS.
 Colors: green = all tunnels up, orange = starting or only some up, red = none up / failed, gray = stopped.
 
 ## Build

@@ -14,6 +14,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
     private let addressField = LabeledTextField(captionKey: "field.address", keyboardType: .URL)
     private let portField = LabeledTextField(captionKey: "field.port", keyboardType: .numberPad)
     private let tunnelCountView = TunnelCountView()
+    private let useTLSSwitch = LabeledSwitch(captionKey: "field.useTLS")
     private let handshakeHostField = LabeledTextField(captionKey: "field.handshakeHost")
     private let handshakePathField = LabeledTextField(captionKey: "field.handshakePath")
     private let webSocketKeyField = LabeledTextField(captionKey: "field.webSocketKey")
@@ -57,6 +58,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         let editable = controller.isEditable
         [addressField, portField, handshakeHostField, handshakePathField,
          webSocketKeyField, expectedAcceptField].forEach { $0.isEnabled = editable }
+        useTLSSwitch.isEnabled = editable
         tunnelCountView.isEnabled = editable
     }
 
@@ -79,6 +81,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         addressField.text = configuration.cdnAddress
         portField.text = String(configuration.cdnPort)
         tunnelCountView.value = configuration.tunnelCount
+        useTLSSwitch.isOn = configuration.useTLS
         handshakeHostField.text = configuration.handshakeHost
         handshakePathField.text = configuration.handshakePath
         webSocketKeyField.text = configuration.webSocketKey
@@ -90,6 +93,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         configuration.cdnAddress = addressField.text.trimmingCharacters(in: .whitespaces)
         configuration.cdnPort = Int(portField.text.trimmingCharacters(in: .whitespaces)) ?? 0
         configuration.tunnelCount = tunnelCountView.value
+        configuration.useTLS = useTLSSwitch.isOn
         configuration.handshakeHost = handshakeHostField.text.trimmingCharacters(in: .whitespaces)
         configuration.handshakePath = handshakePathField.text.trimmingCharacters(in: .whitespaces)
         configuration.webSocketKey = webSocketKeyField.text.trimmingCharacters(in: .whitespaces)
@@ -115,7 +119,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         errorLabel.isHidden = true
 
         let noteLabel = UILabel()
-        noteLabel.text = NSLocalizedString("note.tcpOnly", comment: "")
+        noteLabel.text = NSLocalizedString("note.tls", comment: "") + "\n\n" + NSLocalizedString("note.tcpOnly", comment: "")
         noteLabel.font = UIFont.systemFont(ofSize: 13)
         noteLabel.textColor = AppColor.secondaryText
         noteLabel.numberOfLines = 0
@@ -129,6 +133,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
          portField,
          tunnelCountView,
          makeSectionTitle("section.handshake"),
+         useTLSSwitch,
          handshakeHostField,
          handshakePathField,
          webSocketKeyField,

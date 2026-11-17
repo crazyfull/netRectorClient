@@ -13,6 +13,7 @@ final class TunnelSettings {
     private static final String KEY_HS_PATH = "handshake_path";
     private static final String KEY_WS_KEY = "ws_key";
     private static final String KEY_WS_ACCEPT = "ws_accept";
+    private static final String KEY_USE_TLS = "use_tls";
     private static final String KEY_WANTED = "wanted_running";
 
     String cdnAddress = DefaultSettings.CDN_ADDRESS;
@@ -22,6 +23,7 @@ final class TunnelSettings {
     String handshakePath = DefaultSettings.HANDSHAKE_PATH;
     String webSocketKey = DefaultSettings.WEBSOCKET_KEY;
     String expectedAccept = DefaultSettings.EXPECTED_ACCEPT;
+    boolean useTls = DefaultSettings.USE_TLS;
 
     static TunnelSettings load(Context context) {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -33,6 +35,7 @@ final class TunnelSettings {
         s.handshakePath = p.getString(KEY_HS_PATH, s.handshakePath);
         s.webSocketKey = p.getString(KEY_WS_KEY, s.webSocketKey);
         s.expectedAccept = p.getString(KEY_WS_ACCEPT, s.expectedAccept);
+        s.useTls = p.getBoolean(KEY_USE_TLS, s.useTls);
         return s;
     }
 
@@ -45,6 +48,7 @@ final class TunnelSettings {
                 .putString(KEY_HS_PATH, handshakePath)
                 .putString(KEY_WS_KEY, webSocketKey)
                 .putString(KEY_WS_ACCEPT, expectedAccept)
+                .putBoolean(KEY_USE_TLS, useTls)
                 .apply();
     }
 

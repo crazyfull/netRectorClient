@@ -53,9 +53,9 @@ if(NETRECTOR_ENABLE_TLS)
     set(_bssl_hints ${BORINGSSL_ROOT} $ENV{BORINGSSL_ROOT})
     set(_bssl_inc_hints ${BORINGSSL_INCLUDE_DIR} ${_bssl_hints})
     set(_bssl_lib_hints ${BORINGSSL_LIB_DIR} ${_bssl_hints})
-    find_path(BSSL_INCLUDE_DIR openssl/ssl.h HINTS ${_bssl_inc_hints} PATH_SUFFIXES include . NO_DEFAULT_PATH)
-    find_library(BSSL_SSL_LIB NAMES ssl libssl HINTS ${_bssl_lib_hints} PATH_SUFFIXES lib . ssl Release NO_DEFAULT_PATH)
-    find_library(BSSL_CRYPTO_LIB NAMES crypto libcrypto HINTS ${_bssl_lib_hints} PATH_SUFFIXES lib . crypto Release NO_DEFAULT_PATH)
+    find_path(BSSL_INCLUDE_DIR openssl/ssl.h HINTS ${_bssl_inc_hints} PATH_SUFFIXES include . NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
+    find_library(BSSL_SSL_LIB NAMES ssl libssl HINTS ${_bssl_lib_hints} PATH_SUFFIXES lib . ssl Release NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
+    find_library(BSSL_CRYPTO_LIB NAMES crypto libcrypto HINTS ${_bssl_lib_hints} PATH_SUFFIXES lib . crypto Release NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
     if(BSSL_INCLUDE_DIR AND BSSL_SSL_LIB AND BSSL_CRYPTO_LIB)
         set(NETRECTOR_TLS_FOUND ON)
@@ -63,6 +63,25 @@ if(NETRECTOR_ENABLE_TLS)
         target_include_directories(netRectorClient PUBLIC ${BSSL_INCLUDE_DIR})
         target_link_libraries(netRectorClient PUBLIC ${BSSL_SSL_LIB} ${BSSL_CRYPTO_LIB})
         target_compile_definitions(netRectorClient PUBLIC NETRECTOR_HAS_TLS=1)
+
+        # The customized BoringSSL has SSL_set_record_protocol_version and TLS_CL_VERSION, a stock one has
+        # not. Detect it (a declaration check, so it also works when cross-compiling).
+        include(CheckCXXSourceCompiles)
+        set(_saved_required_includes ${CMAKE_REQUIRED_INCLUDES})
+        set(_saved_try_type ${CMAKE_TRY_COMPILE_TARGET_TYPE})
+        set(CMAKE_REQUIRED_INCLUDES ${BSSL_INCLUDE_DIR})
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+        check_cxx_source_compiles("
+            #include <openssl/ssl.h>
+            void f(SSL* ssl) { SSL_set_record_protocol_version(ssl, TLS_CL_VERSION); }
+            int main() { return 0; }" NETRECTOR_BSSL_RECORD_VERSION)
+        set(CMAKE_REQUIRED_INCLUDES ${_saved_required_includes})
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE ${_saved_try_type})
+        if(NETRECTOR_BSSL_RECORD_VERSION)
+            target_compile_definitions(netRectorClient PUBLIC NETRECTOR_BSSL_RECORD_VERSION=1)
+        else()
+            message(STATUS "netRectorClient: stock BoringSSL (no SSL_set_record_protocol_version), the record-version customization is skipped")
+        endif()
     else()
         message(WARNING "netRectorClient: BoringSSL not found (set -DBORINGSSL_ROOT=... or -DBORINGSSL_INCLUDE_DIR=... -DBORINGSSL_LIB_DIR=...), building WITHOUT TLS")
     endif()
