@@ -21,7 +21,7 @@ buildSlice() {
     cmake -S "$SRC" -B "$build" \
         -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT="$sdk" -DCMAKE_OSX_ARCHITECTURES="$arch" \
         -DCMAKE_OSX_DEPLOYMENT_TARGET="$MIN_IOS_VERSION" \
-        -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF >/dev/null
+        -DCMAKE_MACOSX_BUNDLE=OFF -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF >/dev/null
     cmake --build "$build" --target ssl crypto --parallel 4
     mkdir -p "$dest/lib" "$dest/include"
     cp "$build/libssl.a" "$build/libcrypto.a" "$dest/lib/"
