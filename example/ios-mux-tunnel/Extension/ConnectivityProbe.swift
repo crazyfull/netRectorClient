@@ -123,7 +123,7 @@ enum ConnectivityProbe {
         for descriptor in 0..<Int32(min(limit.rlim_cur, 4096)) where fcntl(descriptor, F_GETFD) != -1 {
             open += 1
         }
-        let limitText = limit.rlim_cur == rlim_t(RLIM_INFINITY) ? "unlimited" : String(limit.rlim_cur)
+        let limitText = limit.rlim_cur >= rlim_t(Int64.max) ? "unlimited" : String(limit.rlim_cur)
         return "open descriptors \(open) of \(limitText)"
     }
 }
