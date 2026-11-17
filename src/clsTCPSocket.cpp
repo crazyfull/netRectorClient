@@ -927,7 +927,7 @@ void TCPSocket::_accepted(NrSocket fd)
 // ----------------------------------------------------------------------------
 // TLS
 // ----------------------------------------------------------------------------
-bool TCPSocket::enableTLS(TLSContext *ctx, const char *serverName)
+bool TCPSocket::enableTLS(TLSContext *ctx, bool bypassMode, const char *serverName)
 {
     if (!ctx || status != Ready)
         return false;
@@ -938,6 +938,7 @@ bool TCPSocket::enableTLS(TLSContext *ctx, const char *serverName)
 #endif
 
     m_tlsCtx = ctx;
+    m_tlsBypassMode = bypassMode;
     if (serverName) {       // nullptr: default (host of connectTo); "": no SNI and no name check
         connInfo().serverName = serverName;
         connInfo().serverNameSet = true;
@@ -982,6 +983,10 @@ bool TCPSocket::tlsStart(bool isServer)
     m_ssl = SSL_new(m_tlsCtx->native());
     if (!m_ssl)
         return false;
+
+    // customized in BoringSSL, both server and client
+    if (m_tlsBypassMode)
+        SSL_set_record_protocol_version(m_ssl, TLS_CL_VERSION);
 
     if (SSL_set_fd(m_ssl, (int)m_SocketContext.fd) != 1) {
         SSL_free(m_ssl);

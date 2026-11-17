@@ -142,7 +142,7 @@ void TunnelPool::connectSlot(size_t index)
     tunnel->setReactor(&m_loop);
 
     // With TLS the handshake request is sent after the TLS handshake (ClientTunnel::handleOnConnected).
-    if (m_tlsContext && !tunnel->enableTLS(m_tlsContext, m_serverName.c_str())) {
+    if (m_tlsContext && !tunnel->enableTLS(m_tlsContext, false, m_serverName.c_str())) {
         NR_LOG(LOG_ERROR, "[client] cannot enable TLS on tunnel %zu", index);
         delete tunnel;
         scheduleReconnect(index);

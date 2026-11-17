@@ -124,7 +124,7 @@ public:
     // ---- TLS (BoringSSL) ----
     // call before connectTo() or inside the accept callback.
     // serverName (optional, client): SNI and certificate name; nullptr = host of connectTo, "" = no SNI
-    bool enableTLS(TLSContext* ctx, const char* serverName = nullptr);
+    bool enableTLS(TLSContext* ctx, bool bypassMode = false, const char* serverName = nullptr);
     bool isTLS() const;
     TLSContext* tlsContext() const { return m_tlsCtx; }
     const char* tlsVersion() const;
@@ -247,6 +247,7 @@ private:
     bool m_dnsPending { false };
     bool m_connectFailNotified { false };
     bool m_tlsReadWantsWrite { false };
+    bool m_tlsBypassMode { false };
     bool m_tlsWriteWantsRead { false };
     bool m_tlsHandshakeWantsWrite { false };
 
