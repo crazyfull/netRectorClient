@@ -217,7 +217,9 @@ final class TunnelController {
             hasSeenConnection = true
             errorMessage = nil
             if status.state != .running {
-                status = TunnelStatus(state: .running, connectedTunnels: 0, totalTunnels: configuration.tunnelCount)
+                // The system says connected at once; the count follows when the extension reports it
+                status = TunnelStatus(state: .running, connectedTunnels: TunnelStatus.unknownCount,
+                                      totalTunnels: configuration.tunnelCount)
             }
             requestStatus()
         case .connecting, .reasserting:

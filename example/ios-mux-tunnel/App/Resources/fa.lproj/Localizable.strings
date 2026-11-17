@@ -7,6 +7,7 @@
 "status.noTunnel" = "هیچ تونلی متصل نیست";
 "status.failed" = "ناموفق";
 "statusBar.tunnels" = "تونل‌ها %d / %d";
+"statusBar.tunnelsUnknown" = "تونل‌ها ? / %d";
 
 "section.server" = "سرور CDN";
 "section.handshake" = "هندشیک (پیشرفته)";

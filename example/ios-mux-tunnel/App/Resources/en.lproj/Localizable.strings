@@ -3,6 +3,7 @@
 
 "status.stopped" = "Stopped";
 "status.starting" = "Starting…";
+"statusBar.tunnelsUnknown" = "Tunnels ? / %d";
 "status.connected" = "Connected";
 "status.noTunnel" = "No tunnel connected";
 "status.failed" = "Failed";

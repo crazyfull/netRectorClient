@@ -22,8 +22,9 @@ final class StatusBarView: UIView {
 
         let showsTunnels = status.state == .running || status.state == .starting
         tunnelsLabel.isHidden = !showsTunnels
-        tunnelsLabel.text = String(format: NSLocalizedString("statusBar.tunnels", comment: ""),
-                                   status.connectedTunnels, status.totalTunnels)
+        tunnelsLabel.text = status.countIsKnown
+            ? String(format: NSLocalizedString("statusBar.tunnels", comment: ""), status.connectedTunnels, status.totalTunnels)
+            : String(format: NSLocalizedString("statusBar.tunnelsUnknown", comment: ""), status.totalTunnels)
     }
 
     // MARK: - Layout
@@ -80,7 +81,7 @@ final class StatusBarView: UIView {
         case .starting:
             return NSLocalizedString("status.starting", comment: "")
         case .running:
-            return status.connectedTunnels > 0
+            return status.connectedTunnels != 0
                 ? NSLocalizedString("status.connected", comment: "")
                 : NSLocalizedString("status.noTunnel", comment: "")
         case .failed:
@@ -99,6 +100,9 @@ final class StatusBarView: UIView {
         case .running:
             if status.connectedTunnels == 0 {
                 return AppColor.error
+            }
+            if !status.countIsKnown {
+                return AppColor.connected
             }
             return status.connectedTunnels >= status.totalTunnels ? AppColor.connected : AppColor.warning
         case .failed:
