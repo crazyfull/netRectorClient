@@ -58,6 +58,13 @@ if(NETRECTOR_ENABLE_TLS)
     find_library(BSSL_CRYPTO_LIB NAMES crypto libcrypto HINTS ${_bssl_lib_hints} PATH_SUFFIXES lib . crypto Release NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
     if(BSSL_INCLUDE_DIR AND BSSL_SSL_LIB AND BSSL_CRYPTO_LIB)
+        # needs SSL_set_record_protocol_version / TLS_CL_VERSION: scripts/patch_boringssl.sh, applied BEFORE building BoringSSL
+        file(READ "${BSSL_INCLUDE_DIR}/openssl/ssl.h" _bssl_ssl_h)
+        if(NOT _bssl_ssl_h MATCHES "SSL_set_record_protocol_version" OR NOT _bssl_ssl_h MATCHES "TLS_CL_VERSION")
+            message(FATAL_ERROR "netRectorClient: this BoringSSL (${BSSL_INCLUDE_DIR}) lacks SSL_set_record_protocol_version / "
+                                "TLS_CL_VERSION. Run scripts/patch_boringssl.sh <boringssl-src> on the sources and rebuild BoringSSL "
+                                "(scripts/build_boringssl.sh does both), or use -DNETRECTOR_ENABLE_TLS=OFF.")
+        endif()
         set(NETRECTOR_TLS_FOUND ON)
         message(STATUS "netRectorClient: TLS enabled (BoringSSL: ${BSSL_SSL_LIB})")
         target_include_directories(netRectorClient PUBLIC ${BSSL_INCLUDE_DIR})
