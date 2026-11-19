@@ -12,6 +12,8 @@
     <string name="status_running">در حال اجرا: تمام ترافیک از تونل عبور می‌کند</string>
     <string name="status_running_tunnels">در حال اجرا: تمام ترافیک از تونل عبور می‌کند\nتونل‌ها %1$d / %2$d</string>
     <string name="status_no_tunnel">در انتظار تونل…\nتونل‌ها %1$d / %2$d</string>
+    <string name="status_udp_up">تونل UDP: وصل</string>
+    <string name="status_udp_idle">تونل UDP: بیکار (در صورت نیاز وصل می‌شود)</string>
     <string name="status_error">متوقف شد: %1$s</string>
 
     <string name="section_server">سرور CDN</string>

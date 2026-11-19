@@ -22,9 +22,13 @@ final class StatusBarView: UIView {
 
         let showsTunnels = status.state == .running || status.state == .starting
         tunnelsLabel.isHidden = !showsTunnels
-        tunnelsLabel.text = status.countIsKnown
+        var text = status.countIsKnown
             ? String(format: NSLocalizedString("statusBar.tunnels", comment: ""), status.connectedTunnels, status.totalTunnels)
             : String(format: NSLocalizedString("statusBar.tunnelsUnknown", comment: ""), status.totalTunnels)
+        if let udpUp = status.udpTunnelUp {      // UDP is on: the UDP tunnel is separate from the tunnels above
+            text += "\n" + NSLocalizedString(udpUp ? "statusBar.udpUp" : "statusBar.udpIdle", comment: "")
+        }
+        tunnelsLabel.text = text
     }
 
     // MARK: - Layout
@@ -41,6 +45,8 @@ final class StatusBarView: UIView {
         tunnelsLabel.font = UIFont.systemFont(ofSize: 15, weight: .regular)
         tunnelsLabel.textColor = AppColor.secondaryText
         tunnelsLabel.isHidden = true
+        tunnelsLabel.numberOfLines = 0
+        tunnelsLabel.textAlignment = .right
         tunnelsLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         separatorView.backgroundColor = AppColor.separator

@@ -12,7 +12,7 @@ enum HevConfigurationBuilder {
         socks5:
           port: \(socksPort)
           address: '\(socksAddress)'
-          udp: 'udp'
+          udp: 'tcp'
         mapdns:
           address: \(DefaultTunnelSettings.dnsAddress)
           port: 53

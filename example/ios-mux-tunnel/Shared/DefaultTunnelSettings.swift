@@ -14,6 +14,11 @@ enum DefaultTunnelSettings {
     static let useTLS = false
     // TLS record-layer "SNI bypass" (needs the server with TLS).
     static let sniBypass = false
+    // UDP over TCP (a separate tunnel, connected on demand). Off by default.
+    static let useUDP = false
+    // The UDP tunnel closes after this many seconds without datagrams (screen on / device asleep).
+    static let udpIdleSeconds: UInt32 = 60
+    static let udpIdleSleepSeconds: UInt32 = 15
 
     // Websocket-style handshake sent as the first bytes of every tunnel connection.
     static let handshakeHost = "sv1.server.ir"

@@ -13,6 +13,8 @@ struct TunnelConfiguration: Codable, Equatable {
     var useTLS = DefaultTunnelSettings.useTLS
     /// TLS record-layer "SNI bypass" (only with TLS).
     var sniBypass = DefaultTunnelSettings.sniBypass
+    /// UDP over TCP (games, calls) on a separate tunnel that connects on demand and closes when idle.
+    var useUDP = DefaultTunnelSettings.useUDP
 
     init() {}
 
@@ -28,6 +30,7 @@ struct TunnelConfiguration: Codable, Equatable {
         expectedAccept = try values.decodeIfPresent(String.self, forKey: .expectedAccept) ?? expectedAccept
         useTLS = try values.decodeIfPresent(Bool.self, forKey: .useTLS) ?? useTLS
         sniBypass = try values.decodeIfPresent(Bool.self, forKey: .sniBypass) ?? sniBypass
+        useUDP = try values.decodeIfPresent(Bool.self, forKey: .useUDP) ?? useUDP
     }
 
     /// Throws the first problem found.

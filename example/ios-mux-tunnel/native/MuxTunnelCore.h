@@ -29,6 +29,9 @@ typedef struct MuxTunnelCoreConfig {
     int32_t verbose;                    // non-zero = debug log
     int32_t useTls;                     // non-zero = wrap the tunnels in TLS (SNI = handshakeHost)
     int32_t sniBypass;                  // non-zero = TLS record-layer "SNI bypass" (only with useTls)
+    int32_t udpEnabled;                 // non-zero = UDP-over-TCP on a separate, on-demand tunnel
+    uint32_t udpIdleSeconds;            // the UDP tunnel closes after this long without datagrams (0 = never)
+    uint32_t udpIdleScreenOffSeconds;   // same while the device sleeps (muxTunnelCoreSetScreenOff)
 } MuxTunnelCoreConfig;
 
 enum {
@@ -46,6 +49,12 @@ int32_t muxTunnelCoreRun(const MuxTunnelCoreConfig* config);
 void muxTunnelCoreStop(void);
 
 int32_t muxTunnelCoreConnectedTunnels(void);
+
+// 1 while the UDP tunnel is connected (or connecting), else 0. Thread-safe.
+int32_t muxTunnelCoreUdpTunnelUp(void);
+
+// The device went to sleep / woke up: the UDP tunnel then closes sooner when idle. Thread-safe.
+void muxTunnelCoreSetScreenOff(int32_t screenOff);
 
 // Receives the library log (errors, warnings, info). level: 0 error, 1 warn, 2 info, 3 debug.
 // The function may be called from any thread. nullptr restores the default (stderr).

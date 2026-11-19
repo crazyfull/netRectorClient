@@ -16,6 +16,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
     private let tunnelCountView = TunnelCountView()
     private let useTLSSwitch = LabeledSwitch(captionKey: "field.useTLS")
     private let sniBypassSwitch = LabeledSwitch(captionKey: "field.sniBypass")
+    private let useUDPSwitch = LabeledSwitch(captionKey: "field.useUDP")
     private let handshakeHostField = LabeledTextField(captionKey: "field.handshakeHost")
     private let handshakePathField = LabeledTextField(captionKey: "field.handshakePath")
     private let webSocketKeyField = LabeledTextField(captionKey: "field.webSocketKey")
@@ -61,6 +62,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
          webSocketKeyField, expectedAcceptField].forEach { $0.isEnabled = editable }
         useTLSSwitch.isEnabled = editable
         sniBypassSwitch.isEnabled = editable
+        useUDPSwitch.isEnabled = editable
         tunnelCountView.isEnabled = editable
     }
 
@@ -85,6 +87,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         tunnelCountView.value = configuration.tunnelCount
         useTLSSwitch.isOn = configuration.useTLS
         sniBypassSwitch.isOn = configuration.sniBypass
+        useUDPSwitch.isOn = configuration.useUDP
         handshakeHostField.text = configuration.handshakeHost
         handshakePathField.text = configuration.handshakePath
         webSocketKeyField.text = configuration.webSocketKey
@@ -98,6 +101,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
         configuration.tunnelCount = tunnelCountView.value
         configuration.useTLS = useTLSSwitch.isOn
         configuration.sniBypass = sniBypassSwitch.isOn
+        configuration.useUDP = useUDPSwitch.isOn
         configuration.handshakeHost = handshakeHostField.text.trimmingCharacters(in: .whitespaces)
         configuration.handshakePath = handshakePathField.text.trimmingCharacters(in: .whitespaces)
         configuration.webSocketKey = webSocketKeyField.text.trimmingCharacters(in: .whitespaces)
@@ -139,6 +143,7 @@ final class MainViewController: UIViewController, TunnelControllerDelegate {
          makeSectionTitle("section.handshake"),
          useTLSSwitch,
          sniBypassSwitch,
+         useUDPSwitch,
          handshakeHostField,
          handshakePathField,
          webSocketKeyField,

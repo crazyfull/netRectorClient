@@ -10,7 +10,9 @@ enum DiagnosticChannel {
     private static let statusPrefix = "#status "
 
     static func statusMessage(for status: TunnelStatus) -> String {
-        return "\(statusPrefix)\(status.state.rawValue) \(status.connectedTunnels) \(status.totalTunnels)"
+        // the optional 4th number is the UDP tunnel: 0 = off, 1 = idle, 2 = connected
+        let udp = status.udpTunnelUp.map { $0 ? 2 : 1 } ?? 0
+        return "\(statusPrefix)\(status.state.rawValue) \(status.connectedTunnels) \(status.totalTunnels) \(udp)"
     }
 
     /// `nil` when `message` is a normal log line.
@@ -19,12 +21,16 @@ enum DiagnosticChannel {
             return nil
         }
         let parts = message.dropFirst(statusPrefix.count).split(separator: " ")
-        guard parts.count == 3,
+        guard parts.count == 3 || parts.count == 4,
               let state = TunnelConnectionState(rawValue: String(parts[0])),
               let connected = Int(parts[1]),
               let total = Int(parts[2]) else {
             return nil
         }
-        return TunnelStatus(state: state, connectedTunnels: connected, totalTunnels: total)
+        var udp: Bool?
+        if parts.count == 4, let code = Int(parts[3]), code > 0 {
+            udp = code == 2
+        }
+        return TunnelStatus(state: state, connectedTunnels: connected, totalTunnels: total, udpTunnelUp: udp)
     }
 }

@@ -241,9 +241,13 @@ public class MainActivity extends Activity {
             // like the iOS app: how many of the tunnels are connected right now
             final int connected = TunnelVpnService.getConnectedTunnels();
             final int total = TunnelVpnService.getTotalTunnels();
-            statusView.setText(connected > 0
+            String text = connected > 0
                     ? getString(R.string.status_running_tunnels, connected, total)
-                    : getString(R.string.status_no_tunnel, connected, total));
+                    : getString(R.string.status_no_tunnel, connected, total);
+            final int udp = TunnelVpnService.getUdpTunnelState();
+            if (udp >= 0)       // UDP is on: its tunnel is separate from the tunnels above
+                text += "\n" + getString(udp == 1 ? R.string.status_udp_up : R.string.status_udp_idle);
+            statusView.setText(text);
             toggleButton.setText(R.string.button_stop);
             break;
         case ERROR:

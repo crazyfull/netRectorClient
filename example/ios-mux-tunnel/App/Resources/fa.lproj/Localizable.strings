@@ -21,7 +21,10 @@
 "field.webSocketKey" = "Sec-WebSocket-Key";
 "field.expectedAccept" = "Sec-WebSocket-Accept مورد انتظار (خالی = بررسی نشود)";
 "note.tls" = "Host در هندشیک فرستاده می‌شود و با فعال بودن TLS به‌عنوان نام سرور TLS (SNI) هم استفاده می‌شود. گواهی سرور بررسی نمی‌شود.";
-"note.tcpOnly" = "فقط ترافیک TCP (و DNS) از تونل عبور می‌کند. سایر ترافیک UDP پشتیبانی نمی‌شود.";
+"note.tcpOnly" = "TCP و DNS همیشه تونل می‌شوند. UDP (بازی، تماس) فقط با «فعال‌سازی UDP»: از یک تونل جدا استفاده می‌کند که در صورت نیاز وصل می‌شود و در بیکاری بسته می‌شود. QUIC پشتیبانی نمی‌شود.";
+"field.useUDP" = "فعال‌سازی UDP (UDP روی TCP)";
+"statusBar.udpUp" = "تونل UDP: وصل";
+"statusBar.udpIdle" = "تونل UDP: بیکار";
 
 "error.address" = "یک آدرس IP یا دامنه وارد کنید";
 "error.port" = "پورت باید بین ۱ تا ۶۵۵۳۵ باشد";

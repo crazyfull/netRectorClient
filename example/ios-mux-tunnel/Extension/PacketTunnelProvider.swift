@@ -137,6 +137,18 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         completionHandler()
     }
 
+    // The device is going to sleep (screen lock) / woke up: with UDP the tunnel closes sooner when idle.
+    override func sleep(completionHandler: @escaping () -> Void) {
+        DiagnosticLog.shared.add("device sleep")
+        muxCore.setScreenOff(true)
+        completionHandler()
+    }
+
+    override func wake() {
+        DiagnosticLog.shared.add("device wake")
+        muxCore.setScreenOff(false)
+    }
+
     override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)?) {
         guard let completionHandler = completionHandler else {
             return
@@ -211,7 +223,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private func currentStatus() -> TunnelStatus {
         return TunnelStatus(state: state,
                             connectedTunnels: state == .running ? muxCore.connectedTunnels : 0,
-                            totalTunnels: configuration?.tunnelCount ?? 0)
+                            totalTunnels: configuration?.tunnelCount ?? 0,
+                            udpTunnelUp: configuration?.useUDP == true ? muxCore.udpTunnelUp : nil)
     }
 
     /// The log plus the live numbers: packets moved through the utun interface tell where it stops.
@@ -252,6 +265,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             var txPackets = 0, txBytes = 0, rxPackets = 0, rxBytes = 0
             hev_socks5_tunnel_stats(&txPackets, &txBytes, &rxPackets, &rxBytes)
             DiagnosticLog.shared.add("tick tunnels \(self.muxCore.connectedTunnels)/\(self.configuration?.tunnelCount ?? 0)"
+                + (self.configuration?.useUDP == true ? " udp \(self.muxCore.udpTunnelUp ? "up" : "down")" : "")
                 + " utun->engine \(txPackets)p/\(txBytes)B engine->utun \(rxPackets)p/\(rxBytes)B"
                 + " mem \(Self.memoryFootprintMegabytes())MB")
         }

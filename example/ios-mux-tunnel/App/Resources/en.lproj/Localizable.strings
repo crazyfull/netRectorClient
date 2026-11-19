@@ -21,7 +21,10 @@
 "field.webSocketKey" = "Sec-WebSocket-Key";
 "field.expectedAccept" = "Expected Sec-WebSocket-Accept (empty = do not check)";
 "note.tls" = "Host is sent in the handshake and, with Enable TLS, also used as the TLS server name (SNI). The server certificate is not verified.";
-"note.tcpOnly" = "Only TCP traffic (and DNS) is tunneled. Other UDP traffic is not supported.";
+"note.tcpOnly" = "TCP and DNS are always tunneled. UDP (games, calls) only with Enable UDP: it uses a separate tunnel that connects when needed and closes when idle. QUIC is not supported.";
+"field.useUDP" = "Enable UDP (UDP over TCP)";
+"statusBar.udpUp" = "UDP tunnel: connected";
+"statusBar.udpIdle" = "UDP tunnel: idle";
 
 "error.address" = "Enter an IP address or a domain";
 "error.port" = "Port must be 1-65535";

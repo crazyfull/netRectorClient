@@ -12,6 +12,8 @@
     <string name="status_running">Running: all traffic goes through the tunnel</string>
     <string name="status_running_tunnels">Running: all traffic goes through the tunnel\nTunnels %1$d / %2$d</string>
     <string name="status_no_tunnel">Waiting for a tunnel…\nTunnels %1$d / %2$d</string>
+    <string name="status_udp_up">UDP tunnel: connected</string>
+    <string name="status_udp_idle">UDP tunnel: idle (connects when needed)</string>
     <string name="status_error">Stopped: %1$s</string>
 
     <string name="section_server">CDN / server</string>

@@ -55,6 +55,9 @@ int32_t muxTunnelCoreRun(const MuxTunnelCoreConfig* source)
     config.keepAliveSeconds = source->keepAliveSeconds;
     config.verbose = source->verbose != 0;
     config.sniTLSBypass = source->sniBypass != 0;
+    config.udpEnabled = source->udpEnabled != 0;
+    config.udpIdleSeconds = source->udpIdleSeconds;
+    config.udpIdleScreenOffSeconds = source->udpIdleScreenOffSeconds;
     config.useTls = source->useTls != 0;        // SNI = the handshake host (tlsServerName stays empty)
 
     if (config.cdnAddress.empty() || config.listenAddress.empty())
@@ -99,6 +102,19 @@ int32_t muxTunnelCoreConnectedTunnels(void)
 {
     std::lock_guard<std::mutex> lock(gMutex);
     return gApplication ? gApplication->connectedTunnelCount() : 0;
+}
+
+int32_t muxTunnelCoreUdpTunnelUp(void)
+{
+    std::lock_guard<std::mutex> lock(gMutex);
+    return gApplication ? gApplication->udpTunnelUp() : 0;
+}
+
+void muxTunnelCoreSetScreenOff(int32_t screenOff)
+{
+    std::lock_guard<std::mutex> lock(gMutex);
+    if (gApplication)
+        gApplication->setScreenOff(screenOff != 0);
 }
 
 } // extern "C"

@@ -8,6 +8,9 @@ struct TunnelStatus: Codable, Equatable {
     var connectedTunnels: Int
     /// Tunnels the configuration asks for.
     var totalTunnels: Int
+    /// The UDP tunnel (UDP over TCP): `nil` = UDP is off, `false` = enabled but idle (connects on the
+    /// first UDP flow), `true` = connected.
+    var udpTunnelUp: Bool? = nil
 
     /// `connectedTunnels` while only the system knows the tunnel is connected (the extension has not
     /// reported the count yet). The extension announces "connected" only after a tunnel is up.

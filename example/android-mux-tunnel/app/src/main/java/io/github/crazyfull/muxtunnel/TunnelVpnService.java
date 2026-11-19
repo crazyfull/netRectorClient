@@ -59,6 +59,7 @@ public class TunnelVpnService extends VpnService {
     private static volatile TunnelState sState = TunnelState.STOPPED;
     private static volatile int sErrorResource = 0;
     private static volatile int sTotalTunnels = 0;
+    private static volatile boolean sUdpEnabled = false;
 
     static TunnelState getState() {
         return sState;
@@ -70,6 +71,13 @@ public class TunnelVpnService extends VpnService {
     }
 
     /** Tunnels the running configuration asks for. */
+    /** -1: UDP is off, 0: enabled but idle (connects on the first UDP flow), 1: the UDP tunnel is connected. */
+    static int getUdpTunnelState() {
+        if (!sUdpEnabled || (sState != TunnelState.RUNNING && sState != TunnelState.STARTING))
+            return -1;
+        return MuxTunnelNative.nativeUdpTunnelUp();
+    }
+
     static int getTotalTunnels() {
         return sState == TunnelState.RUNNING || sState == TunnelState.STARTING ? sTotalTunnels : 0;
     }
@@ -169,6 +177,7 @@ public class TunnelVpnService extends VpnService {
 
             final TunnelSettings settings = TunnelSettings.load(this);
             sTotalTunnels = settings.tunnelCount;
+            sUdpEnabled = settings.useUdp;
             DiagnosticLog.add("start: server " + settings.cdnAddress + ":" + settings.cdnPort + ", tunnels "
                     + settings.tunnelCount + ", TLS " + (settings.useTls ? "on" : "off") + (settings.sniBypass ? " (SNI bypass)" : "") + ", Host "
                     + settings.handshakeHost + ", path " + settings.handshakePath + ", UDP "

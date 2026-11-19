@@ -12,6 +12,16 @@ final class MuxCoreRunner {
         return Int(muxTunnelCoreConnectedTunnels())
     }
 
+    /// Whether the UDP tunnel is connected (or connecting) right now.
+    var udpTunnelUp: Bool {
+        return muxTunnelCoreUdpTunnelUp() != 0
+    }
+
+    /// The device went to sleep / woke up (NEProvider.sleep / wake).
+    func setScreenOff(_ screenOff: Bool) {
+        muxTunnelCoreSetScreenOff(screenOff ? 1 : 0)
+    }
+
     /// Starts the core. `onExit` is called on the core thread when it ends without stop() having
     /// been called (for example when the SOCKS5 port cannot be opened).
     func start(configuration: TunnelConfiguration, socksPort: UInt16, onExit: @escaping (Int32) -> Void) {
@@ -84,7 +94,10 @@ final class MuxCoreRunner {
             keepAliveSeconds: DefaultTunnelSettings.keepAliveSeconds,
             verbose: 1,
             useTls: configuration.useTLS ? 1 : 0,
-            sniBypass: configuration.sniBypass ? 1 : 0)
+            sniBypass: configuration.sniBypass ? 1 : 0,
+            udpEnabled: configuration.useUDP ? 1 : 0,
+            udpIdleSeconds: DefaultTunnelSettings.udpIdleSeconds,
+            udpIdleScreenOffSeconds: DefaultTunnelSettings.udpIdleSleepSeconds)
 
         return muxTunnelCoreRun(&core)
     }

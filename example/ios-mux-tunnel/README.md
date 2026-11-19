@@ -56,7 +56,7 @@ In Xcode set your **Team** for both targets. A VPN app needs the **Network Exten
 
 ## Notes
 
-* Only TCP traffic and DNS go through the tunnel (mapped DNS of hev-socks5-tunnel); other UDP is dropped.
+* TCP and DNS (mapped DNS of hev-socks5-tunnel) always go through the tunnels. Other UDP only with **Enable UDP** (off by default): UDP-over-TCP on a separate tunnel that connects on the first UDP flow and closes after 60 s without datagrams (15 s while the device sleeps, detected with `NEPacketTunnelProvider.sleep/wake`). The status bar shows the UDP tunnel on a second line. Needs a mux-tunnelServer with UDP. QUIC and ICMP are not carried.
 * A Network Extension has a small memory limit, so the engine runs with small buffers
   (`HevConfigurationBuilder`). Raise the number of tunnels carefully on old devices.
 * The tun file descriptor is taken from `packetFlow` (`socket.fileDescriptor`), with a fallback scan
