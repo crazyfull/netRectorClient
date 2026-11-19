@@ -54,6 +54,7 @@ int32_t muxTunnelCoreRun(const MuxTunnelCoreConfig* source)
     config.expectedWebSocketAccept = toString(source->expectedAccept);
     config.keepAliveSeconds = source->keepAliveSeconds;
     config.verbose = source->verbose != 0;
+    config.sniTLSBypass = source->sniBypass != 0;
     config.useTls = source->useTls != 0;        // SNI = the handshake host (tlsServerName stays empty)
 
     if (config.cdnAddress.empty() || config.listenAddress.empty())

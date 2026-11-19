@@ -28,6 +28,8 @@ constexpr const char* ExpectedWebSocketAccept = "dGhlIHNhbXBsZSBub25jzQ=";
 // a self-signed or otherwise invalid certificate works; enable verification for a real certificate.
 constexpr bool UseTls = false;
 constexpr bool TlsVerifyPeer = false;
+// Record-layer "SNI bypass" of the TLS tunnels (see ClientConfig::sniTLSBypass). Off by default.
+constexpr bool SniTlsBypass = false;
 // SNI (and the name checked when verifying). Empty = use HandshakeHost.
 constexpr const char* TlsServerName = "";
 // CA bundle used when verifying. Empty = system CAs (on iOS and Windows a bundle must be given).

@@ -28,6 +28,7 @@ typedef struct MuxTunnelCoreConfig {
     uint32_t keepAliveSeconds;          // 0 = off
     int32_t verbose;                    // non-zero = debug log
     int32_t useTls;                     // non-zero = wrap the tunnels in TLS (SNI = handshakeHost)
+    int32_t sniBypass;                  // non-zero = TLS record-layer "SNI bypass" (only with useTls)
 } MuxTunnelCoreConfig;
 
 enum {

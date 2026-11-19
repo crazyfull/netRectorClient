@@ -108,7 +108,7 @@ Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
     JNIEnv* env, jclass, jstring listenAddress, jint listenPort, jstring cdnAddress, jint cdnPort,
     jint tunnelCount, jstring handshakeHost, jstring handshakePath, jstring webSocketKey,
     jstring expectedAccept, jint keepAliveSeconds, jboolean verbose, jboolean useTls,
-    jboolean udpEnabled, jint udpIdleSeconds, jint udpIdleScreenOffSeconds)
+    jboolean udpEnabled, jint udpIdleSeconds, jint udpIdleScreenOffSeconds, jboolean sniBypass)
 {
     ClientConfig config;
     config.listenAddress = toString(env, listenAddress);
@@ -124,6 +124,7 @@ Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
     config.verbose = verbose == JNI_TRUE;
     config.useTls = useTls == JNI_TRUE;     // SNI = the handshake host (tlsServerName stays empty)
 
+    config.sniTLSBypass = sniBypass == JNI_TRUE;
     config.udpEnabled = udpEnabled == JNI_TRUE;
     config.udpIdleSeconds = static_cast<uint32_t>(udpIdleSeconds < 0 ? 0 : udpIdleSeconds);
     config.udpIdleScreenOffSeconds = static_cast<uint32_t>(udpIdleScreenOffSeconds < 0 ? 0 : udpIdleScreenOffSeconds);

@@ -18,6 +18,8 @@ final class DefaultSettings {
     // Wrap the tunnel connections in TLS. The server name (SNI) is the handshake Host below.
     // The certificate is not verified (the server may use a self-signed one).
     static final boolean USE_TLS = false;
+    /** TLS record-layer "SNI bypass" (needs the server with TLS). Off by default. */
+    static final boolean SNI_BYPASS = false;
     /** UDP-over-TCP (separate tunnel). Off by default. */
     static final boolean USE_UDP = false;
     /** The UDP tunnel closes after this long without datagrams (screen on / screen off). */

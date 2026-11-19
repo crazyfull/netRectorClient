@@ -32,6 +32,10 @@ struct ClientConfig {
     uint32_t handshakeTimeoutSeconds = DefaultClientConfig::HandshakeTimeoutSeconds;
     uint32_t localGreetingTimeoutSeconds = DefaultClientConfig::LocalGreetingTimeoutSeconds;
     size_t maxStreamsPerTunnel = DefaultClientConfig::MaxStreamsPerTunnel;
+    // TLS only: send the records with the customized record-layer version (TCPSocket::enableTLS bypassMode,
+    // "SNI bypass"). Needs the patched BoringSSL (scripts/patch_boringssl.sh); the server must be mux-tunnelServer
+    // with TLS, which understands it. Off by default.
+    bool sniTLSBypass = DefaultClientConfig::SniTlsBypass;
     bool udpEnabled = DefaultClientConfig::UdpEnabled;
     uint32_t udpIdleSeconds = DefaultClientConfig::UdpIdleSeconds;
     uint32_t udpIdleScreenOffSeconds = DefaultClientConfig::UdpIdleScreenOffSeconds;

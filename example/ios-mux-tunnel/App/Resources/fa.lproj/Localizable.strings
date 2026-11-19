@@ -15,6 +15,7 @@
 "field.port" = "پورت";
 "field.tunnels" = "تعداد تونل: %d";
 "field.useTLS" = "فعال‌سازی TLS";
+"field.sniBypass" = "بای‌پس SNI (همراه با TLS)";
 "field.handshakeHost" = "Host";
 "field.handshakePath" = "مسیر هندشیک (با / شروع شود)";
 "field.webSocketKey" = "Sec-WebSocket-Key";

@@ -28,6 +28,8 @@ apps -> TUN -> hev-socks5-tunnel -> SOCKS5 127.0.0.1:<port> -> mux-tunnelClient 
    does not stop the service when the screen is off. Some vendors (Xiaomi, Huawei, Samsung…) have
    an extra "auto-start / background" switch in their own settings.
 
+**Enable TLS** wraps the tunnels in TLS; **SNI bypass** (TLS only, off by default) uses the record-layer customization of the patched BoringSSL.
+
 TCP and DNS always go through the tunnel. Tick **Enable UDP** (off by default) to carry other UDP too
 (games, calls): it is UDP-over-TCP on a **separate tunnel** that connects on the first UDP flow and closes after
 60 s without datagrams (15 s while the screen is off; a running call keeps it open). The server must be a

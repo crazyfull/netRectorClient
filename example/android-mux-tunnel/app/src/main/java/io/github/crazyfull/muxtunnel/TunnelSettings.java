@@ -14,6 +14,7 @@ final class TunnelSettings {
     private static final String KEY_WS_KEY = "ws_key";
     private static final String KEY_WS_ACCEPT = "ws_accept";
     private static final String KEY_USE_TLS = "use_tls";
+    private static final String KEY_SNI_BYPASS = "sni_bypass";
     private static final String KEY_USE_UDP = "use_udp";
     private static final String KEY_WANTED = "wanted_running";
 
@@ -25,6 +26,7 @@ final class TunnelSettings {
     String webSocketKey = DefaultSettings.WEBSOCKET_KEY;
     String expectedAccept = DefaultSettings.EXPECTED_ACCEPT;
     boolean useTls = DefaultSettings.USE_TLS;
+    boolean sniBypass = DefaultSettings.SNI_BYPASS;
     boolean useUdp = DefaultSettings.USE_UDP;
 
     static TunnelSettings load(Context context) {
@@ -38,6 +40,7 @@ final class TunnelSettings {
         s.webSocketKey = p.getString(KEY_WS_KEY, s.webSocketKey);
         s.expectedAccept = p.getString(KEY_WS_ACCEPT, s.expectedAccept);
         s.useTls = p.getBoolean(KEY_USE_TLS, s.useTls);
+        s.sniBypass = p.getBoolean(KEY_SNI_BYPASS, s.sniBypass);
         s.useUdp = p.getBoolean(KEY_USE_UDP, s.useUdp);
         return s;
     }
@@ -52,6 +55,7 @@ final class TunnelSettings {
                 .putString(KEY_WS_KEY, webSocketKey)
                 .putString(KEY_WS_ACCEPT, expectedAccept)
                 .putBoolean(KEY_USE_TLS, useTls)
+                .putBoolean(KEY_SNI_BYPASS, sniBypass)
                 .putBoolean(KEY_USE_UDP, useUdp)
                 .apply();
     }

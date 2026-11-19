@@ -30,6 +30,7 @@
     <string name="hint_ws_key">Sec-WebSocket-Key</string>
     <string name="hint_ws_accept">Expected Sec-WebSocket-Accept (empty = do not check)</string>
     <string name="note_tls">Host is sent in the handshake and, with Enable TLS, also used as the TLS server name (SNI). The server certificate is not verified.</string>
+    <string name="label_sni_bypass">SNI bypass (with TLS)</string>
     <string name="label_use_udp">Enable UDP (UDP over TCP)</string>
     <string name="note_udp">UDP (games, calls) uses a separate tunnel that connects when needed and closes when idle (sooner with the screen off). The server must support it (mux-tunnelServer with UDP). QUIC (HTTP/3) is not supported.</string>
     <string name="note_tcp_only">TCP and DNS are always tunneled. UDP only with \"Enable UDP\"; QUIC is not supported.</string>

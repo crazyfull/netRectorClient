@@ -175,7 +175,7 @@ void TunnelPool::connectSlot(size_t index)
     tunnel->setReactor(&m_loop);
 
     // With TLS the handshake request is sent after the TLS handshake (ClientTunnel::handleOnConnected).
-    if (m_tlsContext && !tunnel->enableTLS(m_tlsContext, false, m_serverName.c_str())) {
+    if (m_tlsContext && !tunnel->enableTLS(m_tlsContext, m_config.sniTLSBypass, m_serverName.c_str())) {
         NR_LOG(LOG_ERROR, "[client] cannot enable TLS on tunnel %zu", index);
         delete tunnel;
         scheduleReconnect(index);
@@ -257,7 +257,7 @@ void TunnelPool::connectUdpTunnel()
     tunnel->setKeepAlive(m_config.udpKeepAliveSeconds);
     tunnel->setMaxStreams(m_config.udpMaxStreams);
 
-    if (m_tlsContext && !tunnel->enableTLS(m_tlsContext, false, m_serverName.c_str())) {
+    if (m_tlsContext && !tunnel->enableTLS(m_tlsContext, m_config.sniTLSBypass, m_serverName.c_str())) {
         NR_LOG(LOG_ERROR, "[client] cannot enable TLS on the UDP tunnel");
         delete tunnel;
         m_udpNextAttemptMs = m_loop.getCachedNowMs() + static_cast<uint64_t>(DefaultClientConfig::UdpRetryDelayMs);

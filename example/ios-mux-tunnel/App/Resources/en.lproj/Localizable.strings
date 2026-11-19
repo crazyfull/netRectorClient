@@ -15,6 +15,7 @@
 "field.port" = "Port";
 "field.tunnels" = "Number of tunnels: %d";
 "field.useTLS" = "Enable TLS";
+"field.sniBypass" = "SNI bypass (with TLS)";
 "field.handshakeHost" = "Host";
 "field.handshakePath" = "Handshake path (starts with /)";
 "field.webSocketKey" = "Sec-WebSocket-Key";

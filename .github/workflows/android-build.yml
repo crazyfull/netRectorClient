@@ -55,7 +55,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: example/android-mux-tunnel/boringssl
-          key: boringssl-android-${{ hashFiles('scripts/fetch-boringssl.sh', 'scripts/build-boringssl-android.sh') }}-ndk${{ env.NDK_VERSION }}
+          key: boringssl-android-${{ hashFiles('scripts/fetch-boringssl.sh', 'scripts/patch_boringssl.sh', 'scripts/build-boringssl-android.sh') }}-ndk${{ env.NDK_VERSION }}
 
       - name: Build BoringSSL (TLS)
         if: steps.boringssl-cache.outputs.cache-hit != 'true'

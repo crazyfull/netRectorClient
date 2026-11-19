@@ -12,6 +12,8 @@ enum DefaultTunnelSettings {
 
     // Wrap the tunnel connections in TLS (SNI = the handshake host; the certificate is not verified).
     static let useTLS = false
+    // TLS record-layer "SNI bypass" (needs the server with TLS).
+    static let sniBypass = false
 
     // Websocket-style handshake sent as the first bytes of every tunnel connection.
     static let handshakeHost = "sv1.server.ir"

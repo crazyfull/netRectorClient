@@ -36,6 +36,7 @@ public class MainActivity extends Activity {
     private EditText cdnPort;
     private EditText tunnelCount;
     private CheckBox useTls;
+    private CheckBox sniBypass;
     private CheckBox useUdp;
     private EditText handshakeHost;
     private EditText handshakePath;
@@ -54,6 +55,7 @@ public class MainActivity extends Activity {
         cdnPort = (EditText) findViewById(R.id.cdn_port);
         tunnelCount = (EditText) findViewById(R.id.tunnel_count);
         useTls = (CheckBox) findViewById(R.id.use_tls);
+        sniBypass = (CheckBox) findViewById(R.id.sni_bypass);
         useUdp = (CheckBox) findViewById(R.id.use_udp);
         handshakeHost = (EditText) findViewById(R.id.handshake_host);
         handshakePath = (EditText) findViewById(R.id.handshake_path);
@@ -68,6 +70,7 @@ public class MainActivity extends Activity {
         cdnPort.setText(String.valueOf(settings.cdnPort));
         tunnelCount.setText(String.valueOf(settings.tunnelCount));
         useTls.setChecked(settings.useTls);
+        sniBypass.setChecked(settings.sniBypass);
         useUdp.setChecked(settings.useUdp);
         handshakeHost.setText(settings.handshakeHost);
         handshakePath.setText(settings.handshakePath);
@@ -191,6 +194,7 @@ public class MainActivity extends Activity {
         settings.tunnelCount = tunnels;
 
         settings.useTls = useTls.isChecked();
+        settings.sniBypass = sniBypass.isChecked();
         settings.useUdp = useUdp.isChecked();
         settings.handshakeHost = handshakeHost.getText().toString().trim();
         settings.handshakePath = handshakePath.getText().toString().trim();
@@ -221,6 +225,7 @@ public class MainActivity extends Activity {
         cdnPort.setEnabled(editable);
         tunnelCount.setEnabled(editable);
         useTls.setEnabled(editable);
+        sniBypass.setEnabled(editable);
         useUdp.setEnabled(editable);
         handshakeHost.setEnabled(editable);
         handshakePath.setEnabled(editable);

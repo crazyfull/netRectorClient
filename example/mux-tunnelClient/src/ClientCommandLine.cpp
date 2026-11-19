@@ -21,6 +21,11 @@ CommandLineOutcome ClientCommandLine::parse(int argc, char** argv, ClientConfig&
             continue;
         }
 
+        if (option == "--bypass") {
+            config.sniTLSBypass = true;
+            continue;
+        }
+
         if (option == "--udp") {
             config.udpEnabled = true;
             continue;
@@ -134,6 +139,7 @@ void ClientCommandLine::printUsage(const char* program)
         "                            certificate is not verified unless --tls-verify / --tls-ca is given\n"
         "  --tls-verify              verify the server certificate (system CAs)\n"
         "  --tls-ca FILE             verify against this CA bundle / certificate (implies --tls-verify)\n"
+        "  --bypass                  TLS record-layer SNI bypass (needs the patched BoringSSL; default off)\n"
         "  --sni NAME                TLS server name, default: the --host value\n"
         "  --header LINE             extra request header, e.g. \"Connection: Upgrade\" (repeatable)\n"
         "  --tunnels N               number of mux tunnels, %d-%d (default %d)\n"

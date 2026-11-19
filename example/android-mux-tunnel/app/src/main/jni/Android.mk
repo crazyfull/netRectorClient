@@ -14,7 +14,7 @@ include $(HEV_DIR)/Android.mk
 
 # BoringSSL for TLS (libssl.a / libcrypto.a per ABI), built by scripts/build-boringssl-android.sh into
 # example/android-mux-tunnel/boringssl. Without it the app is built WITHOUT TLS ("Enable TLS" then reports an error).
-# BORINGSSL_CUSTOM=1: the BoringSSL has SSL_set_record_protocol_version / TLS_CL_VERSION (a stock one has not).
+# The BoringSSL is patched by scripts/patch_boringssl.sh (SSL_set_record_protocol_version / TLS_CL_VERSION): detected below.
 BSSL_DIR := $(MY_PATH)/../../../../boringssl
 ifneq ($(wildcard $(BSSL_DIR)/include/openssl/ssl.h),)
 BSSL_FOUND := 1
@@ -45,7 +45,8 @@ LOCAL_CPPFLAGS := -std=c++17 -fexceptions -frtti -Wall
 ifdef BSSL_FOUND
 LOCAL_C_INCLUDES += $(BSSL_DIR)/include
 LOCAL_CPPFLAGS += -DNETRECTOR_HAS_TLS=1
-ifeq ($(BORINGSSL_CUSTOM),1)
+# the patched BoringSSL (scripts/patch_boringssl.sh, applied by fetch-boringssl.sh) declares SSL_set_record_protocol_version
+ifneq ($(shell grep -c SSL_set_record_protocol_version $(BSSL_DIR)/include/openssl/ssl.h),0)
 LOCAL_CPPFLAGS += -DNETRECTOR_BSSL_RECORD_VERSION=1
 endif
 LOCAL_STATIC_LIBRARIES += bssl_ssl bssl_crypto

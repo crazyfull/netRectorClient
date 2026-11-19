@@ -170,7 +170,7 @@ public class TunnelVpnService extends VpnService {
             final TunnelSettings settings = TunnelSettings.load(this);
             sTotalTunnels = settings.tunnelCount;
             DiagnosticLog.add("start: server " + settings.cdnAddress + ":" + settings.cdnPort + ", tunnels "
-                    + settings.tunnelCount + ", TLS " + (settings.useTls ? "on" : "off") + ", Host "
+                    + settings.tunnelCount + ", TLS " + (settings.useTls ? "on" : "off") + (settings.sniBypass ? " (SNI bypass)" : "") + ", Host "
                     + settings.handshakeHost + ", path " + settings.handshakePath + ", UDP "
                     + (settings.useUdp ? "on" : "off"));
             if (!settings.isValid()) {
@@ -200,7 +200,7 @@ public class TunnelVpnService extends VpnService {
                             settings.webSocketKey, settings.expectedAccept,
                             DefaultSettings.KEEP_ALIVE_SECONDS, true, settings.useTls,
                             settings.useUdp, DefaultSettings.UDP_IDLE_SECONDS,
-                            DefaultSettings.UDP_IDLE_SCREEN_OFF_SECONDS);
+                            DefaultSettings.UDP_IDLE_SCREEN_OFF_SECONDS, settings.sniBypass);
                     DiagnosticLog.add("mux core returned " + code);
                     onCoreExited(code);
                 }

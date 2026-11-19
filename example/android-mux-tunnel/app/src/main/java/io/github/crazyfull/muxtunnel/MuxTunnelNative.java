@@ -24,7 +24,8 @@ final class MuxTunnelNative {
                                 int tunnelCount, String handshakeHost, String handshakePath,
                                 String webSocketKey, String expectedAccept, int keepAliveSeconds,
                                 boolean verbose, boolean useTls,
-                                boolean udpEnabled, int udpIdleSeconds, int udpIdleScreenOffSeconds);
+                                boolean udpEnabled, int udpIdleSeconds, int udpIdleScreenOffSeconds,
+                                boolean sniBypass);
 
     /** Tunnels that are connected right now (0 when the core is not running). Thread-safe. */
     static native int nativeConnectedTunnels();

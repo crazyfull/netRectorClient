@@ -11,6 +11,8 @@ struct TunnelConfiguration: Codable, Equatable {
     var expectedAccept = DefaultTunnelSettings.expectedAccept
     /// Wrap the tunnel connections in TLS. The server name (SNI) is `handshakeHost`.
     var useTLS = DefaultTunnelSettings.useTLS
+    /// TLS record-layer "SNI bypass" (only with TLS).
+    var sniBypass = DefaultTunnelSettings.sniBypass
 
     init() {}
 
@@ -25,6 +27,7 @@ struct TunnelConfiguration: Codable, Equatable {
         webSocketKey = try values.decodeIfPresent(String.self, forKey: .webSocketKey) ?? webSocketKey
         expectedAccept = try values.decodeIfPresent(String.self, forKey: .expectedAccept) ?? expectedAccept
         useTLS = try values.decodeIfPresent(Bool.self, forKey: .useTLS) ?? useTLS
+        sniBypass = try values.decodeIfPresent(Bool.self, forKey: .sniBypass) ?? sniBypass
     }
 
     /// Throws the first problem found.
