@@ -30,6 +30,9 @@ memory (valid 10 years, CN and subjectAltName = `commonName`). TLS needs BoringS
 
 ```sh
 cmake -S . -B build -DBORINGSSL_ROOT=/path/to/boringssl     # TLS is on when BoringSSL is found
+# BoringSSL must be patched BEFORE it is built: scripts/build_boringssl.sh does clone + patch + build;
+# for your own checkout run scripts/patch_boringssl.sh /path/to/boringssl first (adds
+# SSL_set_record_protocol_version and TLS_CL_VERSION; CMake stops with an error if they are missing)
 cmake --build build -j
 ctest --test-dir build                                       # needs the certs dir, see tests/
 ```
