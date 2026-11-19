@@ -24,8 +24,11 @@ void LocalSocksConnection::onReceiveData(const uint8_t* data, size_t length)
 {
     switch (m_state) {
     case State::Relaying:
-        if (m_streamId != 0)
+        if (m_streamId != 0) {
+            if (m_udp)
+                m_pool->noteUdpActivity();
             m_tunnel->sendToStream(m_streamId, data, length);
+        }
         break;
 
     case State::AwaitingGreeting:
@@ -34,7 +37,11 @@ void LocalSocksConnection::onReceiveData(const uint8_t* data, size_t length)
         break;
 
     case State::AwaitingRequest:
-        openStream(data, length);
+        handleRequestBytes(data, length);
+        break;
+
+    case State::WaitingUdpTunnel:
+        m_greetingBuffer.append(reinterpret_cast<const char*>(data), length);   // sent when the tunnel is up
         break;
 
     case State::Failed:
@@ -70,6 +77,11 @@ void LocalSocksConnection::onResume()
 
 void LocalSocksConnection::onClose()
 {
+    if (m_waitingForUdpTunnel) {
+        m_waitingForUdpTunnel = false;
+        m_pool->cancelUdpWait(this);
+    }
+
     if (m_streamId == 0)
         return;
 
@@ -121,20 +133,73 @@ void LocalSocksConnection::handleGreeting()
     if (!m_greetingBuffer.empty()) {
         std::string pending;
         pending.swap(m_greetingBuffer);
-        openStream(reinterpret_cast<const uint8_t*>(pending.data()), pending.size());
+        handleRequestBytes(reinterpret_cast<const uint8_t*>(pending.data()), pending.size());
     }
 }
 
-void LocalSocksConnection::openStream(const uint8_t* data, size_t length)
+// The first bytes of the request. Only the command byte is looked at: "VER CMD ...". Everything is
+// forwarded unchanged; the command decides which tunnel carries the stream.
+void LocalSocksConnection::handleRequestBytes(const uint8_t* data, size_t length)
+{
+    m_greetingBuffer.append(reinterpret_cast<const char*>(data), length);
+    if (m_greetingBuffer.size() < 2)
+        return;     // wait for the command byte
+
+    std::string request;
+    request.swap(m_greetingBuffer);
+    const uint8_t command = static_cast<uint8_t>(request[1]);
+
+    if (command != 0x05) {      // CONNECT and anything else: the server answers
+        openStream(reinterpret_cast<const uint8_t*>(request.data()), request.size(), false);
+        return;
+    }
+
+    // UDP-in-TCP (FWD UDP)
+    if (!m_config.udpEnabled) {
+        NR_LOG(LOG_DEBUG, "[client] UDP request refused: UDP is disabled");
+        rejectRequest(0x07);    // command not supported
+        return;
+    }
+
+    m_greetingBuffer = std::move(request);      // sent once the UDP tunnel is up
+    m_state = State::WaitingUdpTunnel;
+    m_waitingForUdpTunnel = true;
+    if (!m_pool->requestUdpTunnel(this)) {      // may already have called back
+        if (m_waitingForUdpTunnel) {
+            m_waitingForUdpTunnel = false;
+            NR_LOG(LOG_DEBUG, "[client] UDP tunnel not available, rejecting the flow");
+            rejectRequest();
+        }
+    }
+}
+
+void LocalSocksConnection::onUdpTunnelReady()
+{
+    m_waitingForUdpTunnel = false;
+    std::string request;
+    request.swap(m_greetingBuffer);
+    openStream(reinterpret_cast<const uint8_t*>(request.data()), request.size(), true);
+}
+
+void LocalSocksConnection::onUdpTunnelFailed()
+{
+    m_waitingForUdpTunnel = false;
+    NR_LOG(LOG_DEBUG, "[client] UDP tunnel failed, rejecting the flow");
+    rejectRequest();
+}
+
+void LocalSocksConnection::openStream(const uint8_t* data, size_t length, bool udp)
 {
     MultiplexedTunnel* tunnel = nullptr;
-    const uint32_t streamId = m_pool->openStream(&LocalSocksConnection::onStreamData,
-                                                 &LocalSocksConnection::onStreamClose, this, tunnel);
+    const uint32_t streamId = udp
+        ? m_pool->openUdpStream(&LocalSocksConnection::onStreamData, &LocalSocksConnection::onStreamClose, this, tunnel)
+        : m_pool->openStream(&LocalSocksConnection::onStreamData, &LocalSocksConnection::onStreamClose, this, tunnel);
     if (streamId == 0) {
-        NR_LOG(LOG_DEBUG, "[client] no tunnel available, rejecting connection");
+        NR_LOG(LOG_DEBUG, "[client] no %stunnel available, rejecting connection", udp ? "UDP " : "");
         rejectRequest();
         return;
     }
+    m_udp = udp;
 
     if (MultiplexedTunnel::Stream* stream = tunnel->getStream(streamId)) {
         stream->onRemoteFin = &LocalSocksConnection::onStreamRemoteFin;
@@ -147,16 +212,16 @@ void LocalSocksConnection::openStream(const uint8_t* data, size_t length)
     m_state = State::Relaying;
     setIdleTimeout(0);
 
-    NR_LOG(LOG_DEBUG, "[client] stream %u opened", streamId);
+    NR_LOG(LOG_DEBUG, "[client] stream %u opened%s", streamId, udp ? " (UDP)" : "");
 
     // the request (and anything sent behind it) travels through the stream unchanged
     tunnel->sendToStream(streamId, data, length);
 }
 
-void LocalSocksConnection::rejectRequest()
+void LocalSocksConnection::rejectRequest(uint8_t code)
 {
     uint8_t reply[Socks5Reply::Size];
-    Socks5Reply::build(Socks5ReplyCode::GeneralFailure, reply);
+    Socks5Reply::build(static_cast<Socks5ReplyCode>(code), reply);
     send(reply, sizeof(reply));
 
     m_state = State::Failed;
@@ -168,7 +233,10 @@ void LocalSocksConnection::rejectRequest()
 void LocalSocksConnection::onStreamData(void* argument, uint32_t /*streamId*/, const uint8_t* data, size_t length)
 {
     // the first bytes are the SOCKS5 reply of the server, the rest is data from the target
-    static_cast<LocalSocksConnection*>(argument)->send(data, length);
+    LocalSocksConnection* self = static_cast<LocalSocksConnection*>(argument);
+    if (self->m_udp)
+        self->m_pool->noteUdpActivity();
+    self->send(data, length);
 }
 
 void LocalSocksConnection::onStreamRemoteFin(void* argument, uint32_t /*streamId*/)

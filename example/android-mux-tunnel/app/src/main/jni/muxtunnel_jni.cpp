@@ -107,7 +107,8 @@ JNIEXPORT jint JNICALL
 Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
     JNIEnv* env, jclass, jstring listenAddress, jint listenPort, jstring cdnAddress, jint cdnPort,
     jint tunnelCount, jstring handshakeHost, jstring handshakePath, jstring webSocketKey,
-    jstring expectedAccept, jint keepAliveSeconds, jboolean verbose, jboolean useTls)
+    jstring expectedAccept, jint keepAliveSeconds, jboolean verbose, jboolean useTls,
+    jboolean udpEnabled, jint udpIdleSeconds, jint udpIdleScreenOffSeconds)
 {
     ClientConfig config;
     config.listenAddress = toString(env, listenAddress);
@@ -122,6 +123,10 @@ Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeRun(
     config.keepAliveSeconds = static_cast<uint32_t>(keepAliveSeconds < 0 ? 0 : keepAliveSeconds);
     config.verbose = verbose == JNI_TRUE;
     config.useTls = useTls == JNI_TRUE;     // SNI = the handshake host (tlsServerName stays empty)
+
+    config.udpEnabled = udpEnabled == JNI_TRUE;
+    config.udpIdleSeconds = static_cast<uint32_t>(udpIdleSeconds < 0 ? 0 : udpIdleSeconds);
+    config.udpIdleScreenOffSeconds = static_cast<uint32_t>(udpIdleScreenOffSeconds < 0 ? 0 : udpIdleScreenOffSeconds);
 
     if (config.tunnelCount < DefaultClientConfig::MinTunnelCount)
         config.tunnelCount = DefaultClientConfig::MinTunnelCount;
@@ -151,6 +156,23 @@ Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeConnectedTunnels(JNIEnv
 {
     std::lock_guard<std::mutex> lock(g_mutex);
     return g_application ? static_cast<jint>(g_application->connectedTunnelCount()) : 0;
+}
+
+// 1 while the UDP tunnel is connected (or connecting); always 0 when UDP is off.
+JNIEXPORT jint JNICALL
+Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeUdpTunnelUp(JNIEnv*, jclass)
+{
+    std::lock_guard<std::mutex> lock(g_mutex);
+    return g_application ? static_cast<jint>(g_application->udpTunnelUp()) : 0;
+}
+
+// The screen turned off / on: with UDP the shorter screen-off idle time applies.
+JNIEXPORT void JNICALL
+Java_io_github_crazyfull_muxtunnel_MuxTunnelNative_nativeSetScreenOff(JNIEnv*, jclass, jboolean screenOff)
+{
+    std::lock_guard<std::mutex> lock(g_mutex);
+    if (g_application)
+        g_application->setScreenOff(screenOff == JNI_TRUE);
 }
 
 JNIEXPORT void JNICALL

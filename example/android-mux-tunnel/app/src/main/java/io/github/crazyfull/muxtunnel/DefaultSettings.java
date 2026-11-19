@@ -18,6 +18,11 @@ final class DefaultSettings {
     // Wrap the tunnel connections in TLS. The server name (SNI) is the handshake Host below.
     // The certificate is not verified (the server may use a self-signed one).
     static final boolean USE_TLS = false;
+    /** UDP-over-TCP (separate tunnel). Off by default. */
+    static final boolean USE_UDP = false;
+    /** The UDP tunnel closes after this long without datagrams (screen on / screen off). */
+    static final int UDP_IDLE_SECONDS = 60;
+    static final int UDP_IDLE_SCREEN_OFF_SECONDS = 15;
 
     // Websocket-style handshake sent as the first bytes of every tunnel connection.
     static final String HANDSHAKE_HOST = "sv1.server.ir";

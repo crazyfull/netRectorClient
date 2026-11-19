@@ -85,7 +85,16 @@ overridden at run time:
 | `--keepalive SEC` | 30 | mux ping interval, 0 = off |
 | `--handshake-timeout SEC` | 10 | time allowed for connect + handshake |
 | `--max-streams N` | 32768 | concurrent streams per tunnel (keep <= the server's) |
+| `--udp` | off | carry UDP too: UDP-over-TCP (SOCKS5 command 0x05, hev `udp: 'tcp'`) on a separate tunnel |
+| `--udp-idle SEC` | 60 | close the UDP tunnel after SEC without datagrams, 0 = never |
+| `--udp-idle-screen-off SEC` | 15 | same, while `ClientApplication::setScreenOff(true)` is in effect |
+| `--udp-keepalive SEC` | 30 | mux ping interval of the UDP tunnel |
+| `--udp-max-streams N` | 256 | concurrent UDP flows (keep <= the server's `--udp-max-streams`) |
 | `-v` | | debug log |
+
+With `--udp` the UDP tunnel is not part of the `--tunnels` pool: it connects when the first UDP flow arrives,
+uses the same handshake/TLS, and is closed when idle; the next flow reconnects it. Without `--udp` a UDP request
+is answered with "command not supported".
 
 ## Source layout
 

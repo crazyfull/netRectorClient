@@ -21,6 +21,11 @@ CommandLineOutcome ClientCommandLine::parse(int argc, char** argv, ClientConfig&
             continue;
         }
 
+        if (option == "--udp") {
+            config.udpEnabled = true;
+            continue;
+        }
+
         if (option == "--tls-verify") {
             config.useTls = true;
             config.tlsVerifyPeer = true;
@@ -29,6 +34,11 @@ CommandLineOutcome ClientCommandLine::parse(int argc, char** argv, ClientConfig&
 
         if (option == "-v" || option == "--verbose") {
             config.verbose = true;
+            continue;
+        }
+
+        if (option == "--udp") {
+            config.udpEnabled = true;
             continue;
         }
 
@@ -67,7 +77,8 @@ CommandLineOutcome ClientCommandLine::parse(int argc, char** argv, ClientConfig&
         } else if (option == "--header") {
             config.requestHeaders.emplace_back(value);
         } else if (option == "--tunnels" || option == "--keepalive" || option == "--handshake-timeout"
-                   || option == "--max-streams") {
+                   || option == "--max-streams" || option == "--udp-idle" || option == "--udp-idle-screen-off"
+                   || option == "--udp-keepalive" || option == "--udp-max-streams") {
             if (!parseUnsigned(value, number)) {
                 std::fprintf(stderr, "invalid value for %s: %s\n", option.c_str(), value);
                 return CommandLineOutcome::Invalid;
@@ -84,6 +95,14 @@ CommandLineOutcome ClientCommandLine::parse(int argc, char** argv, ClientConfig&
                 config.keepAliveSeconds = static_cast<uint32_t>(number);
             } else if (option == "--handshake-timeout") {
                 config.handshakeTimeoutSeconds = static_cast<uint32_t>(number);
+            } else if (option == "--udp-idle") {
+                config.udpIdleSeconds = static_cast<uint32_t>(number);
+            } else if (option == "--udp-idle-screen-off") {
+                config.udpIdleScreenOffSeconds = static_cast<uint32_t>(number);
+            } else if (option == "--udp-keepalive") {
+                config.udpKeepAliveSeconds = static_cast<uint32_t>(number);
+            } else if (option == "--udp-max-streams") {
+                config.udpMaxStreams = static_cast<size_t>(number);
             } else {
                 config.maxStreamsPerTunnel = static_cast<size_t>(number);
             }
@@ -121,6 +140,11 @@ void ClientCommandLine::printUsage(const char* program)
         "  --keepalive SEC           mux ping interval, 0 = off (default %u)\n"
         "  --handshake-timeout SEC   time allowed for connect + handshake (default %u)\n"
         "  --max-streams N           concurrent streams per tunnel (default %zu)\n"
+        "  --udp                     carry UDP too (UDP-over-TCP on a separate tunnel; default off)\n"
+        "  --udp-idle SEC            close the UDP tunnel after SEC without datagrams, 0 = never (default %u)\n"
+        "  --udp-idle-screen-off SEC same, while the screen is off (default %u)\n"
+        "  --udp-keepalive SEC       mux ping interval of the UDP tunnel, 0 = off (default %u)\n"
+        "  --udp-max-streams N       concurrent UDP flows (default %zu)\n"
         "  -v, --verbose             debug logging\n"
         "  -h, --help                this text\n",
         program,
@@ -130,5 +154,7 @@ void ClientCommandLine::printUsage(const char* program)
         DefaultClientConfig::WebSocketKey, DefaultClientConfig::ExpectedWebSocketAccept,
         DefaultClientConfig::MinTunnelCount, DefaultClientConfig::MaxTunnelCount, DefaultClientConfig::TunnelCount,
         DefaultClientConfig::KeepAliveSeconds, DefaultClientConfig::HandshakeTimeoutSeconds,
-        DefaultClientConfig::MaxStreamsPerTunnel);
+        DefaultClientConfig::MaxStreamsPerTunnel,
+        DefaultClientConfig::UdpIdleSeconds, DefaultClientConfig::UdpIdleScreenOffSeconds,
+        DefaultClientConfig::UdpKeepAliveSeconds, DefaultClientConfig::UdpMaxStreams);
 }

@@ -4,8 +4,10 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
@@ -89,6 +91,17 @@ public class TunnelVpnService extends VpnService {
     private long lastTxBytes = -1;
     private long lastRxBytes = -1;
     private int stalledTicks;
+    private boolean screenReceiverRegistered;
+
+    /** Screen off / on: the UDP tunnel closes sooner when idle while the screen is off. */
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final boolean off = Intent.ACTION_SCREEN_OFF.equals(intent.getAction());
+            DiagnosticLog.add("screen " + (off ? "off" : "on"));
+            MuxTunnelNative.nativeSetScreenOff(off);
+        }
+    };
 
     /** Every few seconds: how many tunnels are up and how much the engine moved. */
     private final Runnable statsTicker = new Runnable() {
@@ -158,7 +171,8 @@ public class TunnelVpnService extends VpnService {
             sTotalTunnels = settings.tunnelCount;
             DiagnosticLog.add("start: server " + settings.cdnAddress + ":" + settings.cdnPort + ", tunnels "
                     + settings.tunnelCount + ", TLS " + (settings.useTls ? "on" : "off") + ", Host "
-                    + settings.handshakeHost + ", path " + settings.handshakePath);
+                    + settings.handshakeHost + ", path " + settings.handshakePath + ", UDP "
+                    + (settings.useUdp ? "on" : "off"));
             if (!settings.isValid()) {
                 failLocked(R.string.error_settings);
                 return;
@@ -184,12 +198,16 @@ public class TunnelVpnService extends VpnService {
                             DefaultSettings.SOCKS_ADDRESS, socksPort, settings.cdnAddress, settings.cdnPort,
                             settings.tunnelCount, settings.handshakeHost, settings.handshakePath,
                             settings.webSocketKey, settings.expectedAccept,
-                            DefaultSettings.KEEP_ALIVE_SECONDS, true, settings.useTls);
+                            DefaultSettings.KEEP_ALIVE_SECONDS, true, settings.useTls,
+                            settings.useUdp, DefaultSettings.UDP_IDLE_SECONDS,
+                            DefaultSettings.UDP_IDLE_SCREEN_OFF_SECONDS);
                     DiagnosticLog.add("mux core returned " + code);
                     onCoreExited(code);
                 }
             }, "mux-core");
             coreThread.start();
+
+            registerScreenReceiver();
 
             // 2. the TUN interface
             try {
@@ -238,6 +256,7 @@ public class TunnelVpnService extends VpnService {
         stopping = true;
         mainHandler.removeCallbacks(statsTicker);
         unregisterNetworkCallback();
+        unregisterScreenReceiver();
 
         if (hevStarted) {
             try {
@@ -347,7 +366,7 @@ public class TunnelVpnService extends VpnService {
                 + "socks5:\n"
                 + "  port: %d\n"
                 + "  address: %s\n"
-                + "  udp: 'udp'\n"
+                + "  udp: 'tcp'\n"      // UDP-in-TCP; the core refuses it (or carries it) depending on "Enable UDP"
                 + "mapdns:\n"
                 + "  address: %s\n"
                 + "  port: 53\n"
@@ -441,7 +460,8 @@ public class TunnelVpnService extends VpnService {
         } catch (Throwable t) {
             traffic = "engine stats failed: " + t;
         }
-        DiagnosticLog.add("tick tunnels " + MuxTunnelNative.nativeConnectedTunnels() + "/" + sTotalTunnels + ", "
+        DiagnosticLog.add("tick tunnels " + MuxTunnelNative.nativeConnectedTunnels() + "/" + sTotalTunnels
+                + ", udp tunnel " + (MuxTunnelNative.nativeUdpTunnelUp() == 1 ? "up" : "down") + ", "
                 + traffic + ", native heap " + (Debug.getNativeHeapAllocatedSize() / (1024 * 1024)) + " MB");
     }
 
@@ -478,6 +498,30 @@ public class TunnelVpnService extends VpnService {
             networkCallback = null;
             DiagnosticLog.add("network monitor not available: " + e);
         }
+    }
+
+    private void registerScreenReceiver() {
+        try {
+            final IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+            filter.addAction(Intent.ACTION_SCREEN_ON);
+            registerReceiver(screenReceiver, filter);
+            screenReceiverRegistered = true;
+            final PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (power != null && Build.VERSION.SDK_INT >= 20)
+                MuxTunnelNative.nativeSetScreenOff(!power.isInteractive());
+        } catch (RuntimeException e) {
+            DiagnosticLog.add("screen monitor not available: " + e);
+        }
+    }
+
+    private void unregisterScreenReceiver() {
+        if (!screenReceiverRegistered)
+            return;
+        try {
+            unregisterReceiver(screenReceiver);
+        } catch (RuntimeException ignored) {
+        }
+        screenReceiverRegistered = false;
     }
 
     private void unregisterNetworkCallback() {

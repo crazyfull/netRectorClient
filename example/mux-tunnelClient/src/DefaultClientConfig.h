@@ -53,6 +53,22 @@ constexpr int MaxLoopSliceMs = 1000;
 // Shortest sleep, to avoid a busy loop when a deadline has just passed.
 constexpr int MinLoopSliceMs = 10;
 
+// UDP-over-TCP (SOCKS5 FWD UDP of hev-socks5-tunnel). OFF by default: the TCP tunnels never carry
+// UDP. When enabled, UDP flows use ONE separate tunnel that is connected on the first UDP flow and
+// closed again when no datagram moved for a while (the next flow reconnects it).
+constexpr bool UdpEnabled = false;
+// Close the UDP tunnel after this many seconds without any datagram (0 = never close it).
+constexpr uint32_t UdpIdleSeconds = 60;
+// Same, while the screen is off (see ClientApplication::setScreenOff). Active calls keep it open.
+constexpr uint32_t UdpIdleScreenOffSeconds = 15;
+// Mux ping interval of the UDP tunnel (0 = off). Keep it above the idle time if you do not want
+// pings to keep an unused tunnel alive; the idle close happens first anyway.
+constexpr uint32_t UdpKeepAliveSeconds = 30;
+// Concurrent UDP flows (streams) on the UDP tunnel. Keep it <= the server's --udp-max-streams.
+constexpr size_t UdpMaxStreams = 256;
+// Shortest time between two connect attempts of the UDP tunnel after a failure.
+constexpr int UdpRetryDelayMs = 1000;
+
 // Delay before a lost tunnel is re-established; doubles on every failure up to the maximum.
 constexpr int ReconnectInitialDelayMs = 500;
 constexpr int ReconnectMaxDelayMs = 10000;

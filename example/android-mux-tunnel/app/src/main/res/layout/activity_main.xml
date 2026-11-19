@@ -112,6 +112,19 @@
             android:inputType="text"
             android:singleLine="true" />
 
+        <CheckBox
+            android:id="@+id/use_udp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_use_udp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/note_udp"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

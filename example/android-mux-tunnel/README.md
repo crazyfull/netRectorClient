@@ -28,8 +28,11 @@ apps -> TUN -> hev-socks5-tunnel -> SOCKS5 127.0.0.1:<port> -> mux-tunnelClient 
    does not stop the service when the screen is off. Some vendors (Xiaomi, Huawei, Samsung…) have
    an extra "auto-start / background" switch in their own settings.
 
-Only TCP traffic and DNS go through the tunnel (the mux server carries SOCKS5 CONNECT). Other UDP
-traffic is not supported.
+TCP and DNS always go through the tunnel. Tick **Enable UDP** (off by default) to carry other UDP too
+(games, calls): it is UDP-over-TCP on a **separate tunnel** that connects on the first UDP flow and closes after
+60 s without datagrams (15 s while the screen is off; a running call keeps it open). The server must be a
+mux-tunnelServer with UDP support. QUIC (HTTP/3) is not carried: the browser falls back to TCP. ICMP is not supported.
+The Diagnostics tick line shows `udp tunnel up/down`.
 
 Defaults live in `DefaultSettings.java` (mirrors `DefaultClientConfig.h`).
 

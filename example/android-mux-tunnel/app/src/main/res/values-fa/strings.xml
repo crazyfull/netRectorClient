@@ -30,7 +30,9 @@
     <string name="hint_ws_key">Sec-WebSocket-Key</string>
     <string name="hint_ws_accept">Sec-WebSocket-Accept مورد انتظار (خالی = بررسی نشود)</string>
     <string name="note_tls">Host در هندشیک فرستاده می‌شود و با فعال بودن TLS به‌عنوان نام سرور TLS (SNI) هم استفاده می‌شود. گواهی سرور بررسی نمی‌شود.</string>
-    <string name="note_tcp_only">فقط ترافیک TCP (و DNS) از تونل عبور می‌کند. سایر ترافیک UDP پشتیبانی نمی‌شود.</string>
+    <string name="label_use_udp">فعال‌سازی UDP (UDP روی TCP)</string>
+    <string name="note_udp">UDP (بازی، تماس) از یک تونل جداگانه عبور می‌کند که در صورت نیاز وصل می‌شود و در زمان بیکاری بسته می‌شود (با صفحه خاموش زودتر). سرور باید از آن پشتیبانی کند (mux-tunnelServer با UDP). QUIC (HTTP/3) پشتیبانی نمی‌شود.</string>
+    <string name="note_tcp_only">TCP و DNS همیشه تونل می‌شوند. UDP فقط با «فعال‌سازی UDP»؛ QUIC پشتیبانی نمی‌شود.</string>
 
     <string name="error_address">یک آدرس IP یا دامنه وارد کنید</string>
     <string name="error_port">پورت باید بین ۱ تا ۶۵۵۳۵ باشد</string>

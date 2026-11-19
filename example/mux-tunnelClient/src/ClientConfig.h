@@ -32,6 +32,11 @@ struct ClientConfig {
     uint32_t handshakeTimeoutSeconds = DefaultClientConfig::HandshakeTimeoutSeconds;
     uint32_t localGreetingTimeoutSeconds = DefaultClientConfig::LocalGreetingTimeoutSeconds;
     size_t maxStreamsPerTunnel = DefaultClientConfig::MaxStreamsPerTunnel;
+    bool udpEnabled = DefaultClientConfig::UdpEnabled;
+    uint32_t udpIdleSeconds = DefaultClientConfig::UdpIdleSeconds;
+    uint32_t udpIdleScreenOffSeconds = DefaultClientConfig::UdpIdleScreenOffSeconds;
+    uint32_t udpKeepAliveSeconds = DefaultClientConfig::UdpKeepAliveSeconds;
+    size_t udpMaxStreams = DefaultClientConfig::UdpMaxStreams;
     bool verbose = false;
 };
 

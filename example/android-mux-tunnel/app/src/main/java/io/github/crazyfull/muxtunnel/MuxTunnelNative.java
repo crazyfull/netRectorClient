@@ -23,10 +23,17 @@ final class MuxTunnelNative {
     static native int nativeRun(String listenAddress, int listenPort, String cdnAddress, int cdnPort,
                                 int tunnelCount, String handshakeHost, String handshakePath,
                                 String webSocketKey, String expectedAccept, int keepAliveSeconds,
-                                boolean verbose, boolean useTls);
+                                boolean verbose, boolean useTls,
+                                boolean udpEnabled, int udpIdleSeconds, int udpIdleScreenOffSeconds);
 
     /** Tunnels that are connected right now (0 when the core is not running). Thread-safe. */
     static native int nativeConnectedTunnels();
+
+    /** 1 while the UDP tunnel is connected or connecting (0 when UDP is off). Thread-safe. */
+    static native int nativeUdpTunnelUp();
+
+    /** Screen off: the UDP tunnel closes sooner when idle. Thread-safe. */
+    static native void nativeSetScreenOff(boolean screenOff);
 
     static native void nativeStop();
 

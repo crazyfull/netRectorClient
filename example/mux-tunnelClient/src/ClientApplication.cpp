@@ -44,6 +44,14 @@ void ClientApplication::requestStop()
         m_loop->wake();
 }
 
+void ClientApplication::setScreenOff(bool screenOff)
+{
+    m_screenOff = screenOff;
+    std::lock_guard<std::mutex> lock(m_loopMutex);
+    if (m_loop)
+        m_loop->wake();
+}
+
 int ClientApplication::run(bool handleSignals)
 {
     if (handleSignals)
@@ -98,6 +106,9 @@ int ClientApplication::run(bool handleSignals)
     }
 
     pool->start();
+    if (m_config.udpEnabled)
+        NR_LOG(LOG_INFO, "[client] UDP-over-TCP enabled (separate tunnel, idle close after %us, %us with the screen off)",
+               m_config.udpIdleSeconds, m_config.udpIdleScreenOffSeconds);
 
     if (loopbackOnly) {
         NR_LOG(LOG_INFO, "[client] SOCKS5 on port %d (IPv4 loopback: %s, IPv6 loopback: %s), %d tunnel(s) to %s:%u",
@@ -123,14 +134,17 @@ int ClientApplication::run(bool handleSignals)
         }
         loop.runOnce(sliceMs);
         loop.updateCashedTime();
+        pool->setScreenOff(m_screenOff);
         pool->tick(loop.getCachedNowMs());
         m_connectedTunnels = static_cast<int>(pool->connectedCount());
+        m_udpTunnelUp = pool->udpTunnelUp() ? 1 : 0;
     }
 
     NR_LOG(LOG_INFO, "[client] shutting down");
 
     pool->stop();       // no reconnects while the sockets are closed
     m_connectedTunnels = 0;
+    m_udpTunnelUp = 0;
     listener.stop();
     loopbackListener.stop();
     {
